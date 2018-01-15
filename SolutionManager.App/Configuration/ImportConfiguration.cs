@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Xml.Serialization;
 
-namespace SolutionManager.Logic.Configuration
+namespace SolutionManager.App.Configuration
 {
     [Serializable]
     [XmlRoot]
     public class ImportConfiguration
     {
-        [XmlAttribute("timeOutInMinutes")]
-        public int TimeOutInMinutes { get; set; }
-
         [XmlAttribute("showImportProgress")]
         public bool ShowImportProgress { get; set; }
 
@@ -21,9 +18,6 @@ namespace SolutionManager.Logic.Configuration
         {
             if (SolutionFiles == null)
                 throw new Exception("No solution files found in config.");
-
-            if (TimeOutInMinutes == 0)
-                TimeOutInMinutes = 6;
 
             return true;
         }

@@ -77,13 +77,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration\CrmCredentials.cs" />
-    <Compile Include="Configuration\ImportConfiguration.cs" />
-    <Compile Include="Configuration\SolutionFile.cs" />
-    <Compile Include="Configuration\SolutionImportSettings.cs" />
     <Compile Include="DynamicsCrm\CrmErrorCodes.cs" />
     <Compile Include="DynamicsCrm\CrmOrganization.cs" />
     <Compile Include="DynamicsCrm\Solution.cs" />
+    <Compile Include="DynamicsCrm\SolutionImportConfiguration.cs" />
     <Compile Include="DynamicsCrm\SolutionImportResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

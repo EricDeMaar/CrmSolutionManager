@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Xml.Linq;
 using System.Xml.Serialization;
-using SolutionManager.Logic.Configuration;
+using Microsoft.Xrm.Sdk;
 using SolutionManager.Logic.DynamicsCrm;
 using SolutionManager.App.Helpers;
-using System.Globalization;
+using SolutionManager.App.Configuration;
+using SolutionManager.App.Extensions;
 
 namespace SolutionManager.App
 {
@@ -52,11 +54,10 @@ namespace SolutionManager.App
 
                     if (!validated && solution.ContinueOnError)
                         continue;
-                    
-                    using (var crm = CreateCrmOrganization(solution.CrmCredentials, config.TimeOutInMinutes))
-                    {
-                        ExecuteAction(crm, solution);
-                    }
+
+                    var crm = OrganizationHelper.CreateOrganizationService(solution.CrmCredentials);
+
+                    ExecuteAction(crm, solution);
                 }
             }
 
@@ -64,7 +65,7 @@ namespace SolutionManager.App
             Console.ReadKey();
         }
 
-        private static void ExecuteAction(CrmOrganization crm, SolutionFile solution)
+        private static void ExecuteAction(IOrganizationService crm, SolutionFile solution)
         {
             switch (solution.Action)
             {
@@ -82,33 +83,40 @@ namespace SolutionManager.App
             }
         }
 
-        private static bool ExecuteImport(CrmOrganization crm, SolutionFile solution)
+        private static bool ExecuteImport(IOrganizationService orgService, SolutionFile solution)
         {
             SolutionData solutionData = SolutionHelper.ReadVersionFromZip(solution.FileName);
 
-            bool startImport = crm.CompareSolutionVersion(solutionData.Version, solutionData.UniqueName, solution.ImportSettings.OverwriteIfSameVersionExists);
-
-            if (startImport)
+            using (var crm = new CrmOrganization(orgService))
             {
-                using (FileStream zip = File.Open(Path.Combine(_baseDirectory, $@"Solutions\{solution.FileName}"), FileMode.Open))
+                bool startImport = crm.CompareSolutionVersion(solutionData.Version, solutionData.UniqueName, solution.ImportSettings.OverwriteIfSameVersionExists);
+
+                if (startImport)
                 {
-                    Console.WriteLine($"{CurrentTime()} - Starting with import of {solution.FileName}");
+                    using (FileStream zip = File.Open(Path.Combine(_baseDirectory, $@"Solutions\{solution.FileName}"), FileMode.Open))
+                    {
+                        Console.WriteLine($"{CurrentTime()} - Starting with import of {solution.FileName}");
 
-                    var result = crm.ImportSolution(zip, solution, true);
+                        var result = crm.ImportSolution(zip, solution.ToSolutionImportConfiguration(), true);
 
-                    if (result.Status == ImportResultStatus.Failure)
-                        return false;
+                        if (result.Status == ImportResultStatus.Failure)
+                            return false;
+                    }
                 }
             }
-
             return true;
         }
 
-        private static bool ExecuteExport(CrmOrganization crm, SolutionFile solution)
+        private static bool ExecuteExport(IOrganizationService orgService, SolutionFile solution)
         {
             Console.WriteLine($"{CurrentTime()} - Exporting solution {solution.UniqueName}.");
             var writeToFile = Path.Combine(_solutionsDirectory, solution.WriteToZipFile);
-            bool result = crm.ExportSolution(solution.UniqueName, writeToFile, solution.ExportAsManaged);
+            bool result;
+
+            using (var crm = new CrmOrganization(orgService))
+            {
+                result = crm.ExportSolution(solution.UniqueName, writeToFile, solution.ExportAsManaged);
+            }
 
             if (!result && !solution.ContinueOnError)
                 return false;
@@ -121,7 +129,7 @@ namespace SolutionManager.App
             return true;
         }
 
-        public static bool ExecuteDelete(CrmOrganization crm, SolutionFile solution)
+        public static bool ExecuteDelete(IOrganizationService orgService, SolutionFile solution)
         {
             if (solution.UniqueName == null && solution.ContinueOnError)
                 return true;
@@ -132,19 +140,11 @@ namespace SolutionManager.App
                 return false;
             }
 
-            crm.DeleteSolution(solution.UniqueName);
-
-            return true;
-        }
-
-        private static CrmOrganization CreateCrmOrganization(CrmCredentials credentials, int timeOutInMinutes)
-        {
-            if (credentials.UserName != null && credentials.Password != null)
+            using (var crm = new CrmOrganization(orgService))
             {
-                return new CrmOrganization(credentials.OrganizationUri, timeOutInMinutes, credentials.UserName, credentials.Password, credentials.DomainName);
+                crm.DeleteSolution(solution.UniqueName);
+                return true;
             }
-
-            return new CrmOrganization(credentials.OrganizationUri, timeOutInMinutes);
         }
 
         private static string CurrentTime() => $"[{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}]";

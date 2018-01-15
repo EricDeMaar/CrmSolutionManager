@@ -6,132 +6,24 @@ using System.IO;
 using System.Linq;
 using System.ServiceModel;
 using System.Threading;
-using System.Xml.Linq;
+using System.Xml;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Client;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Query;
-using Microsoft.Xrm.Tooling.Connector;
-using SolutionManager.Logic.Configuration;
-using System.Xml;
 
 namespace SolutionManager.Logic.DynamicsCrm
 {
-    [DebuggerDisplay("CrmContext")]
     public class CrmOrganization : IDisposable
     {
-        #region Constructor + Crm Context
-        public CrmOrganization(string url, int? timeOutInMinutes = null) : this(CreateOrganizationService(url, timeOutInMinutes)) { }
-
-        public CrmOrganization(string url, int? timeOutInMinutes, string user, string password, string domain) : this(CreateOrganizationService(url, timeOutInMinutes, user, password, domain)) { }
-
-        private static IOrganizationService CreateOrganizationService(string url, int? timeOutInMinutes = null, string user = null, string password = null, string domain = null)
-        {
-            // Connect to the CRM web service using a connection string.
-            string connectionString = $@"Url={url};";
-
-            if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(password))
-                connectionString += $"Username={user};Password={password};";
-
-            connectionString += "authtype=Office365";
-
-            CrmServiceClient conn = new CrmServiceClient(connectionString);
-
-            // Cast the proxy client to the IOrganizationService interface.
-            var orgService = (IOrganizationService)conn.OrganizationWebProxyClient != null ? (IOrganizationService)conn.OrganizationWebProxyClient : (IOrganizationService)conn.OrganizationServiceProxy;
-
-            IServiceManagement<IOrganizationService> serviceManagement = ServiceConfigurationFactory.CreateManagement<IOrganizationService>(new Uri(url));
-
-            return orgService;
-        }
+        private IOrganizationService OrganizationService { get; }
 
         public CrmOrganization(IOrganizationService organizationService)
         {
             OrganizationService = organizationService;
         }
 
-        public IOrganizationService OrganizationService { get; }
-        #endregion
-
-        #region Helpers for Execute & Retrieve & Update & Delete
-        [DebuggerStepThrough]
-        public void Execute(OrganizationRequest request)
-        {
-            OrganizationService.Execute(request);
-        }
-
-        [DebuggerStepThrough]
-        public Entity Retrieve(string entityName, Guid id, ColumnSet columnSet)
-        {
-            return OrganizationService.Retrieve(entityName, id, columnSet);
-        }
-
-        [DebuggerStepThrough]
-        public TResponse Execute<TResponse>(OrganizationRequest request) where TResponse : OrganizationResponse
-        {
-            return (TResponse)OrganizationService.Execute(request);
-        }
-
-        [DebuggerStepThrough]
-        public Entity RetrieveFetchXmlSingle(string fetchxml)
-        {
-            var retrieved = RetrieveFetchXml(fetchxml).ToList();
-
-            switch (retrieved.Count)
-            {
-                case 0:
-                    return null;
-                case 1:
-                    return retrieved.First();
-                default:
-                    throw new Exception($"Expected one, retrieved multiple at: {fetchxml}");
-            }
-        }
-
-        [DebuggerStepThrough]
-        public IEnumerable<Entity> RetrieveFetchXml(string fetchxml)
-        {
-            var result = OrganizationService.RetrieveMultiple(new FetchExpression(fetchxml));
-            return result.Entities;
-        }
-
-        public void Delete(string entityName, Guid id)
-        {
-            OrganizationService.Delete(entityName, id);
-        }
-        #endregion
-
-        public Solution GetSolutionByName(string solutionName)
-        {
-            QueryExpression querySolution = new QueryExpression
-            {
-                EntityName = Solution.EntityLogicalName,
-                ColumnSet = new ColumnSet(new string[] { "installedon", "version", "versionnumber", "friendlyname", "uniquename" }),
-                Criteria = new FilterExpression()
-            };
-
-            querySolution.Criteria.AddCondition("uniquename", ConditionOperator.Equal, solutionName);
-            Solution solution = (Solution)OrganizationService.RetrieveMultiple(querySolution).Entities[0];
-
-            return solution;
-        }
-
-        public Entity GetEntityByField(string entityLogicalName, string fieldName, object value)
-        {
-            var entity = this.RetrieveFetchXmlSingle(
-                             $@"<fetch>
-                              <entity name=""{entityLogicalName}"">
-                                <filter>
-                                  <condition attribute=""{fieldName}"" operator=""eq"" value=""{value}"" />
-                                </filter>
-                              </entity>
-                            </fetch>");
-
-            return entity;
-        }
-
-        public SolutionImportResult ImportSolution(Stream customizationFileStream, SolutionFile solution, bool showImportProgress)
+        public SolutionImportResult ImportSolution(Stream customizationFileStream, SolutionImportConfiguration configuration, bool showImportProgress)
         {
             if (customizationFileStream == null)
                 throw new ArgumentNullException(nameof(customizationFileStream));
@@ -140,7 +32,6 @@ namespace SolutionManager.Logic.DynamicsCrm
             customizationFileStream.Read(buffer, 0, buffer.Length);
 
             Entity job;
-
             Guid importJobId = Guid.NewGuid();
             Guid? asyncJobId = Guid.NewGuid();
             Thread t = null;
@@ -155,20 +46,20 @@ namespace SolutionManager.Logic.DynamicsCrm
             {
                 var importSolutionRequest = new ImportSolutionRequest
                 {
-                    ConvertToManaged = solution.ImportSettings.ConvertToManaged,
+                    ConvertToManaged = configuration.ConvertToManaged,
                     CustomizationFile = buffer,
                     ImportJobId = importJobId,
-                    OverwriteUnmanagedCustomizations = solution.ImportSettings.OverwriteUnmanagedCustomizations,
-                    PublishWorkflows = solution.ImportSettings.PublishWorkflows,
-                    SkipProductUpdateDependencies = solution.ImportSettings.SkipProductDependencies
+                    OverwriteUnmanagedCustomizations = configuration.OverwriteUnmanagedCustomizations,
+                    PublishWorkflows = configuration.PublishWorkflows,
+                    SkipProductUpdateDependencies = configuration.SkipProductDependencies
                 };
 
                 ExecuteAsyncRequest asyncRequest = new ExecuteAsyncRequest()
                 {
                     Request = importSolutionRequest
                 };
-                ExecuteAsyncResponse asyncResponse = this.Execute<ExecuteAsyncResponse>(asyncRequest) as ExecuteAsyncResponse;
 
+                ExecuteAsyncResponse asyncResponse = this.Execute<ExecuteAsyncResponse>(asyncRequest) as ExecuteAsyncResponse;
                 asyncJobId = asyncResponse.AsyncJobId;
 
                 DateTime end = DateTime.Now.AddSeconds(10);
@@ -210,7 +101,7 @@ namespace SolutionManager.Logic.DynamicsCrm
 
             SolutionImportResult status = CreateImportStatus(job);
 
-            Console.WriteLine($"{CurrentTime()} - Solution {solution.FileName} was imported with status {status.Status.ToString()}");
+            Console.WriteLine($"{CurrentTime()} - Solution {configuration.FileName} was imported with status {status.Status.ToString()}");
             return status;
         }
 
@@ -288,31 +179,42 @@ namespace SolutionManager.Logic.DynamicsCrm
                     if (overwriteIfSameVersion)
                     {
                         Console.WriteLine($"{CurrentTime()} - Found solution {solution.UniqueName} with the same version {solution.Version} in target system. Overwriting...");
-
                         return true;
                     }
 
                     Console.WriteLine($"{CurrentTime()} - Found solution {solution.UniqueName} in target system - version {solution.Version} is already loaded.");
-
                     return false;
                 }
 
                 if (version < solution.GetVersion())
                 {
                     Console.WriteLine($"{CurrentTime()} - Found solution {solution.UniqueName} in target system - a higher version ({solution.Version}) is already loaded.");
-
                     return false;
                 }
 
                 if (version > solution.GetVersion())
                 {
                     Console.WriteLine($"{CurrentTime()} - Found solution {solution.UniqueName} with lower version {solution.Version} in target system - starting update.");
-
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private Solution GetSolutionByName(string solutionName)
+        {
+            QueryExpression querySolution = new QueryExpression
+            {
+                EntityName = Solution.EntityLogicalName,
+                ColumnSet = new ColumnSet(new string[] { "installedon", "version", "versionnumber", "friendlyname", "uniquename" }),
+                Criteria = new FilterExpression()
+            };
+
+            querySolution.Criteria.AddCondition("uniquename", ConditionOperator.Equal, solutionName);
+            Solution solution = (Solution)OrganizationService.RetrieveMultiple(querySolution).Entities[0];
+
+            return solution;
         }
 
         private void ImportSolutionProgress(object importJobId)
@@ -344,7 +246,6 @@ namespace SolutionManager.Logic.DynamicsCrm
             using (var reader = new StringReader(job["data"] as string))
             {
                 XmlDocument xmlDoc = new XmlDocument();
-
                 xmlDoc.LoadXml(job.GetAttributeValue<string>("data"));
 
                 string solutionImportResult = xmlDoc.SelectSingleNode("//solutionManifest/result/@result")?.Value;
@@ -377,6 +278,70 @@ namespace SolutionManager.Logic.DynamicsCrm
         }
         
         private string CurrentTime() => $"[{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}]";
+
+        #region Helpers for Execute & Retrieve & Update & Delete
+        [DebuggerStepThrough]
+        private void Execute(OrganizationRequest request)
+        {
+            OrganizationService.Execute(request);
+        }
+
+        [DebuggerStepThrough]
+        private Entity Retrieve(string entityName, Guid id, ColumnSet columnSet)
+        {
+            return OrganizationService.Retrieve(entityName, id, columnSet);
+        }
+
+        [DebuggerStepThrough]
+        private TResponse Execute<TResponse>(OrganizationRequest request) where TResponse : OrganizationResponse
+        {
+            return (TResponse)OrganizationService.Execute(request);
+        }
+
+        [DebuggerStepThrough]
+        private Entity RetrieveFetchXmlSingle(string fetchxml)
+        {
+            var retrieved = RetrieveFetchXml(fetchxml).ToList();
+
+            switch (retrieved.Count)
+            {
+                case 0:
+                    return null;
+                case 1:
+                    return retrieved.First();
+                default:
+                    throw new Exception($"Expected one, retrieved multiple at: {fetchxml}");
+            }
+        }
+
+        [DebuggerStepThrough]
+        private IEnumerable<Entity> RetrieveFetchXml(string fetchxml)
+        {
+            var result = OrganizationService.RetrieveMultiple(new FetchExpression(fetchxml));
+            return result.Entities;
+        }
+
+        [DebuggerStepThrough]
+        private Entity GetEntityByField(string entityLogicalName, string fieldName, object value)
+        {
+            var entity = this.RetrieveFetchXmlSingle(
+                             $@"<fetch>
+                              <entity name=""{entityLogicalName}"">
+                                <filter>
+                                  <condition attribute=""{fieldName}"" operator=""eq"" value=""{value}"" />
+                                </filter>
+                              </entity>
+                            </fetch>");
+
+            return entity;
+        }
+
+        [DebuggerStepThrough]
+        private void Delete(string entityName, Guid id)
+        {
+            OrganizationService.Delete(entityName, id);
+        }
+        #endregion
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

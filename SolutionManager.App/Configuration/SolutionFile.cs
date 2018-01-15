@@ -1,7 +1,8 @@
-﻿using System;
+﻿using SolutionManager.Logic.DynamicsCrm;
+using System;
 using System.Xml.Serialization;
 
-namespace SolutionManager.Logic.Configuration
+namespace SolutionManager.App.Configuration
 {
     [Serializable]
     [XmlType(AnonymousType = true)]

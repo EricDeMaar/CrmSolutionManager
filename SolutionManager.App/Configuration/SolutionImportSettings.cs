@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Xml.Serialization;
 
-namespace SolutionManager.Logic.Configuration
+namespace SolutionManager.App.Configuration
 {
     [Serializable]
     public class SolutionImportSettings
