@@ -14,6 +14,7 @@ using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Xrm.Tooling.Connector;
 using SolutionManager.Logic.Configuration;
+using System.Xml;
 
 namespace SolutionManager.Logic.DynamicsCrm
 {
@@ -209,7 +210,7 @@ namespace SolutionManager.Logic.DynamicsCrm
 
             SolutionImportResult status = CreateImportStatus(job);
 
-            Console.WriteLine($@"Solution {solution.FileName} was imported with status {status.Status.ToString()}");
+            Console.WriteLine($"{CurrentTime()} - Solution {solution.FileName} was imported with status {status.Status.ToString()}");
             return status;
         }
 
@@ -250,11 +251,11 @@ namespace SolutionManager.Logic.DynamicsCrm
 
             if (solution == null)
             {
-                Console.WriteLine($@"The solution {uniqueName} was not found in the target system");
+                Console.WriteLine($"{CurrentTime()} - The solution {uniqueName} was not found in the target system");
                 return false;
             }
 
-            Console.WriteLine($@"Deleting solution {solution.UniqueName} with version {solution.Version} from target system.");
+            Console.WriteLine($"{CurrentTime()} - Deleting solution {solution.UniqueName} with version {solution.Version} from target system.");
 
             this.Delete("solution", solution.SolutionId);
 
@@ -262,11 +263,11 @@ namespace SolutionManager.Logic.DynamicsCrm
 
             if (retrieveSolution != null)
             {
-                Console.WriteLine("The solution still exists.");
+                Console.WriteLine($"{CurrentTime()} - The solution still exists.");
                 return false;
             }
 
-            Console.WriteLine("The solution has been deleted.");
+            Console.WriteLine($"{CurrentTime()} - The solution has been deleted.");
             return true;
         }
 
@@ -276,7 +277,7 @@ namespace SolutionManager.Logic.DynamicsCrm
 
             if (solution == null)
             {
-                Console.WriteLine($@"The solution {solutionName} was not found in the target system.");
+                Console.WriteLine($"{CurrentTime()} - The solution {solutionName} was not found in the target system.");
                 return true;
             }
 
@@ -286,26 +287,26 @@ namespace SolutionManager.Logic.DynamicsCrm
                 {
                     if (overwriteIfSameVersion)
                     {
-                        Console.WriteLine($@"Found solution {solution.UniqueName} with the same version {solution.Version} in target system. Overwriting...");
+                        Console.WriteLine($"{CurrentTime()} - Found solution {solution.UniqueName} with the same version {solution.Version} in target system. Overwriting...");
 
                         return true;
                     }
 
-                    Console.WriteLine($@"Found solution {solution.UniqueName} in target system - version {solution.Version} is already loaded.");
+                    Console.WriteLine($"{CurrentTime()} - Found solution {solution.UniqueName} in target system - version {solution.Version} is already loaded.");
 
                     return false;
                 }
 
                 if (version < solution.GetVersion())
                 {
-                    Console.WriteLine($@"Found solution {solution.UniqueName} in target system - a higher version ({solution.Version}) is already loaded.");
+                    Console.WriteLine($"{CurrentTime()} - Found solution {solution.UniqueName} in target system - a higher version ({solution.Version}) is already loaded.");
 
                     return false;
                 }
 
                 if (version > solution.GetVersion())
                 {
-                    Console.WriteLine($@"Found solution {solution.UniqueName} with lower version {solution.Version} in target system - starting update.");
+                    Console.WriteLine($"{CurrentTime()} - Found solution {solution.UniqueName} with lower version {solution.Version} in target system - starting update.");
 
                     return true;
                 }
@@ -330,11 +331,11 @@ namespace SolutionManager.Logic.DynamicsCrm
 
                 if (progress == 100)
                 {
-                    Console.WriteLine("Solution import is at 100%");
+                    Console.WriteLine($"{CurrentTime()} - Solution import is at 100%");
                     break;
                 }
 
-                Console.Write("Solution import is at {0:N0}%\r", progress);
+                Console.Write($"{CurrentTime()} - Solution import is at {progress.ToString("N0")}%\r");
             }
         }
 
@@ -342,11 +343,24 @@ namespace SolutionManager.Logic.DynamicsCrm
         {
             using (var reader = new StringReader(job["data"] as string))
             {
-                XDocument doc = XDocument.Load(reader);
-                var result = doc.Descendants("solutionManifests").Descendants().First().Descendants("result").First();
-                string errorCode = result.Attribute("errorcode").Value;
+                XmlDocument xmlDoc = new XmlDocument();
+
+                xmlDoc.LoadXml(job.GetAttributeValue<string>("data"));
+
+                string solutionImportResult = xmlDoc.SelectSingleNode("//solutionManifest/result/@result")?.Value;
+                string errorCode = xmlDoc.SelectSingleNode("//solutionManifest/result/@errorcode")?.Value;
+                string errorText = xmlDoc.SelectSingleNode("//solutionManifest/result/@errortext")?.Value;
+
                 ImportResultStatus status;
-                Enum.TryParse(result.Attribute("result").Value, true, out status);
+
+                if (string.IsNullOrEmpty(solutionImportResult))
+                {
+                    status = ImportResultStatus.UnableToRetrieve;
+                }
+                else
+                {
+                    Enum.TryParse(solutionImportResult, true, out status);
+                }
 
                 return new SolutionImportResult
                 {
@@ -355,12 +369,14 @@ namespace SolutionManager.Logic.DynamicsCrm
                         errorCode.StartsWith("0x")
                         ? int.Parse(errorCode.Substring(2), NumberStyles.HexNumber)
                         : int.Parse(errorCode),
-                    ErrorMessage = result.Attribute("errortext").Value,
+                    ErrorMessage = errorText,
                     Status = status,
                     Data = job["data"] as string
                 };
             }
         }
+        
+        private string CurrentTime() => $"[{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}]";
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

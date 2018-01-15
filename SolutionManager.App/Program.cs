@@ -5,6 +5,7 @@ using System.Xml.Serialization;
 using SolutionManager.Logic.Configuration;
 using SolutionManager.Logic.DynamicsCrm;
 using SolutionManager.App.Helpers;
+using System.Globalization;
 
 namespace SolutionManager.App
 {
@@ -29,7 +30,7 @@ namespace SolutionManager.App
                 }
                 catch (Exception exception)
                 {
-                    Console.WriteLine($"Error reading configuration '{_importConfig}'. Exception: {exception.Message}");
+                    Console.WriteLine($"{CurrentTime()} - Error reading configuration '{_importConfig}'. Exception: {exception.Message}");
                 }
 
                 if (config == null)
@@ -59,7 +60,7 @@ namespace SolutionManager.App
                 }
             }
 
-            Console.WriteLine("All solution files have been processed. Press any key to exit.");
+            Console.WriteLine($"{CurrentTime()} - All solution files have been processed. Press any key to exit.");
             Console.ReadKey();
         }
 
@@ -91,7 +92,7 @@ namespace SolutionManager.App
             {
                 using (FileStream zip = File.Open(Path.Combine(_baseDirectory, $@"Solutions\{solution.FileName}"), FileMode.Open))
                 {
-                    Console.WriteLine($@"Starting with import of {solution.FileName}");
+                    Console.WriteLine($"{CurrentTime()} - Starting with import of {solution.FileName}");
 
                     var result = crm.ImportSolution(zip, solution, true);
 
@@ -105,7 +106,7 @@ namespace SolutionManager.App
 
         private static bool ExecuteExport(CrmOrganization crm, SolutionFile solution)
         {
-            Console.Write($"Exporting solution {solution.UniqueName}.\r");
+            Console.WriteLine($"{CurrentTime()} - Exporting solution {solution.UniqueName}.");
             var writeToFile = Path.Combine(_solutionsDirectory, solution.WriteToZipFile);
             bool result = crm.ExportSolution(solution.UniqueName, writeToFile, solution.ExportAsManaged);
 
@@ -115,7 +116,7 @@ namespace SolutionManager.App
             if (!result && solution.ContinueOnError)
                 return true;
 
-            Console.WriteLine($@"Solution {solution.UniqueName} was successfully exported to {solution.WriteToZipFile}");
+            Console.WriteLine($"{CurrentTime()} - Solution {solution.UniqueName} was successfully exported to {solution.WriteToZipFile}");
 
             return true;
         }
@@ -145,5 +146,7 @@ namespace SolutionManager.App
 
             return new CrmOrganization(credentials.OrganizationUri, timeOutInMinutes);
         }
+
+        private static string CurrentTime() => $"[{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}]";
     }
 }

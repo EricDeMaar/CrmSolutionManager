@@ -15,6 +15,7 @@ namespace SolutionManager.Logic.DynamicsCrm
     {
         Success,
         Warning,
-        Failure
+        Failure,
+        UnableToRetrieve
     }
 }
