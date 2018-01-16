@@ -4,8 +4,11 @@ using System.Xml.Serialization;
 namespace SolutionManager.App.Configuration
 {
     [Serializable]
-    public class CrmCredentials
+    public class Organization
     {
+        [XmlElement]
+        public string OrganizationName { get; set; }
+
         [XmlElement]
         public string OrganizationUri { get; set; }
 

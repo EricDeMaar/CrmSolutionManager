@@ -86,11 +86,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration\CrmCredentials.cs" />
+    <Compile Include="Configuration\Organization.cs" />
     <Compile Include="Configuration\ImportConfiguration.cs" />
-    <Compile Include="Configuration\SolutionFile.cs" />
-    <Compile Include="Configuration\SolutionImportSettings.cs" />
-    <Compile Include="Extensions\SolutionFileExtensions.cs" />
+    <Compile Include="Configuration\WorkItem.cs" />
+    <Compile Include="Configuration\WorkItems\DeleteSolutionWorkItem.cs" />
+    <Compile Include="Configuration\WorkItems\ExportSolutionWorkItem.cs" />
+    <Compile Include="Configuration\WorkItems\ImportSolutionWorkItem.cs" />
+    <Compile Include="Extensions\ImportSolutionWorkItemExtensions.cs" />
     <Compile Include="Helpers\OrganizationHelper.cs" />
     <Compile Include="Helpers\SolutionData.cs" />
     <Compile Include="Helpers\SolutionHelper.cs" />

@@ -6,7 +6,7 @@ namespace SolutionManager.App.Helpers
 {
     public static class OrganizationHelper
     {
-        public static IOrganizationService CreateOrganizationService(CrmCredentials credentials)
+        public static IOrganizationService CreateOrganizationService(Organization credentials)
         {
             // Connect to the CRM web service using a connection string.
             string connectionString = $@"Url={credentials.OrganizationUri};";

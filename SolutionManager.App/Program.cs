@@ -8,6 +8,9 @@ using SolutionManager.Logic.DynamicsCrm;
 using SolutionManager.App.Helpers;
 using SolutionManager.App.Configuration;
 using SolutionManager.App.Extensions;
+using System.Linq;
+using SolutionManager.App.Configuration.WorkItems;
+using System.Collections.Generic;
 
 namespace SolutionManager.App
 {
@@ -22,6 +25,8 @@ namespace SolutionManager.App
         static void Main(string[] args)
         {
             Console.SetWindowSize(150, 25);
+
+            //GenerateXml();
 
             using (var xml = XElement.Load(_importConfig).CreateReader())
             {
@@ -42,22 +47,27 @@ namespace SolutionManager.App
 
                 config.Validate();
 
-                foreach (SolutionFile solution in config.SolutionFiles)
+                foreach (WorkItem workItem in config.WorkItems)
                 {
-                    bool validated = solution.Validate();
+                    bool validated = true; //workItem.Validate();
 
-                    if (!validated && !solution.ContinueOnError)
+                    if (!validated && !workItem.ContinueOnError)
                     {
                         PrintAbortMessage();
                         return;
                     }
 
-                    if (!validated && solution.ContinueOnError)
+                    if (!validated && workItem.ContinueOnError)
                         continue;
 
-                    var crm = OrganizationHelper.CreateOrganizationService(solution.CrmCredentials);
+                    Organization org = config.Organizations.Where(x => x.OrganizationName == workItem.OrganizationName).FirstOrDefault();
 
-                    ExecuteAction(crm, solution);
+                    if (org == null)
+                        throw new NullReferenceException($"Organization with name {workItem.OrganizationName} was not found in the config.");
+
+                    var crm = OrganizationHelper.CreateOrganizationService(org);
+
+                    ExecuteAction(crm, workItem);
                 }
             }
 
@@ -65,39 +75,44 @@ namespace SolutionManager.App
             Console.ReadKey();
         }
 
-        private static void ExecuteAction(IOrganizationService crm, SolutionFile solution)
+        private static void ExecuteAction(IOrganizationService crm, WorkItem workItem)
         {
-            switch (solution.Action)
+            if (workItem is ImportSolutionWorkItem)
             {
-                case ActionType.Import:
-                    ExecuteImport(crm, solution);
-                    break;
-                case ActionType.Export:
-                    ExecuteExport(crm, solution);
-                    break;
-                case ActionType.Delete:
-                    ExecuteDelete(crm, solution);
-                    break;
-                default:
-                    throw new InvalidOperationException($"Action {solution.Action} not understood.");
+                ExecuteImport(crm, (ImportSolutionWorkItem)workItem);
+                return;
             }
+
+            if (workItem is ExportSolutionWorkItem)
+            {
+                ExecuteExport(crm, (ExportSolutionWorkItem)workItem);
+                return;
+            }
+
+            if (workItem is DeleteSolutionWorkItem)
+            {
+                ExecuteDelete(crm, (DeleteSolutionWorkItem)workItem);
+                return;
+            }
+
+            throw new InvalidOperationException($"WorkItem type {workItem.GetType()} is not supported.");
         }
 
-        private static bool ExecuteImport(IOrganizationService orgService, SolutionFile solution)
+        private static bool ExecuteImport(IOrganizationService orgService, ImportSolutionWorkItem importSolution)
         {
-            SolutionData solutionData = SolutionHelper.ReadVersionFromZip(solution.FileName);
+            SolutionData solutionData = SolutionHelper.ReadVersionFromZip(importSolution.FileName);
 
             using (var crm = new CrmOrganization(orgService))
             {
-                bool startImport = crm.CompareSolutionVersion(solutionData.Version, solutionData.UniqueName, solution.ImportSettings.OverwriteIfSameVersionExists);
+                bool startImport = crm.CompareSolutionVersion(solutionData.Version, solutionData.UniqueName, importSolution.OverwriteIfSameVersionExists);
 
                 if (startImport)
                 {
-                    using (FileStream zip = File.Open(Path.Combine(_baseDirectory, $@"Solutions\{solution.FileName}"), FileMode.Open))
+                    using (FileStream zip = File.Open(Path.Combine(_baseDirectory, $@"Solutions\{importSolution.FileName}"), FileMode.Open))
                     {
-                        Console.WriteLine($"{CurrentTime()} - Starting with import of {solution.FileName}");
+                        Console.WriteLine($"{CurrentTime()} - Starting with import of {importSolution.FileName}");
 
-                        var result = crm.ImportSolution(zip, solution.ToSolutionImportConfiguration(), true);
+                        var result = crm.ImportSolution(zip, importSolution.ToSolutionImportConfiguration(), true);
 
                         if (result.Status == ImportResultStatus.Failure)
                             return false;
@@ -107,34 +122,34 @@ namespace SolutionManager.App
             return true;
         }
 
-        private static bool ExecuteExport(IOrganizationService orgService, SolutionFile solution)
+        private static bool ExecuteExport(IOrganizationService orgService, ExportSolutionWorkItem exportSolution)
         {
-            Console.WriteLine($"{CurrentTime()} - Exporting solution {solution.UniqueName}.");
-            var writeToFile = Path.Combine(_solutionsDirectory, solution.WriteToZipFile);
+            Console.WriteLine($"{CurrentTime()} - Exporting solution {exportSolution.UniqueName}.");
+            var writeToFile = Path.Combine(_solutionsDirectory, exportSolution.WriteToZipFile);
             bool result;
 
             using (var crm = new CrmOrganization(orgService))
             {
-                result = crm.ExportSolution(solution.UniqueName, writeToFile, solution.ExportAsManaged);
+                result = crm.ExportSolution(exportSolution.UniqueName, writeToFile, exportSolution.ExportAsManaged);
             }
 
-            if (!result && !solution.ContinueOnError)
+            if (!result && !exportSolution.ContinueOnError)
                 return false;
 
-            if (!result && solution.ContinueOnError)
+            if (!result && exportSolution.ContinueOnError)
                 return true;
 
-            Console.WriteLine($"{CurrentTime()} - Solution {solution.UniqueName} was successfully exported to {solution.WriteToZipFile}");
+            Console.WriteLine($"{CurrentTime()} - Solution {exportSolution.UniqueName} was successfully exported to {exportSolution.WriteToZipFile}");
 
             return true;
         }
 
-        public static bool ExecuteDelete(IOrganizationService orgService, SolutionFile solution)
+        public static bool ExecuteDelete(IOrganizationService orgService, DeleteSolutionWorkItem deleteSolution)
         {
-            if (solution.UniqueName == null && solution.ContinueOnError)
+            if (deleteSolution.UniqueName == null && deleteSolution.ContinueOnError)
                 return true;
 
-            if (solution.UniqueName == null && !solution.ContinueOnError)
+            if (deleteSolution.UniqueName == null && !deleteSolution.ContinueOnError)
             {
                 PrintAbortMessage();
                 return false;
@@ -142,9 +157,66 @@ namespace SolutionManager.App
 
             using (var crm = new CrmOrganization(orgService))
             {
-                crm.DeleteSolution(solution.UniqueName);
+                crm.DeleteSolution(deleteSolution.UniqueName);
                 return true;
             }
+        }
+
+        private static string GenerateXml()
+        {
+            ImportConfiguration x = new ImportConfiguration();
+
+            x.Name = "WorkDefinition 1";
+            x.Description = "This is a WorkDefinition.";
+            x.Organizations = new Organization[]
+            {
+                new Organization()
+                {
+                    DomainName = "domain",
+                    OrganizationName = "OrganizationName",
+                    OrganizationUri = "organizationUri",
+                    Password = "Password",
+                    UserName = "UserName",
+                }
+            };
+            x.WorkItems = new WorkItem[]
+            {
+                new ImportSolutionWorkItem()
+                {
+                    ContinueOnError = true,
+                    FileName = "FileName",
+                    OrganizationName = "OrganizationName",
+                    OverwriteIfSameVersionExists = true,
+                    OverwriteUnmanagedCustomizations = true,
+                    PublishWorkflows = true,
+                    ShowImportProgress = true,
+                    SkipProductDependencies = false,
+                },
+                new DeleteSolutionWorkItem()
+                {
+                    UniqueName = "SolutionName",
+                    ContinueOnError = true,
+                    OrganizationName = "OrganizationName"
+                }
+            };
+
+            try
+            {
+                var xmlSerializer = new XmlSerializer(typeof(ImportConfiguration));
+
+                using (StringWriter textWriter = new StringWriter())
+                {
+                    xmlSerializer.Serialize(textWriter, x);
+                    var lala = textWriter.ToString();
+                    return lala;
+                }
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"{CurrentTime()} - Error reading configuration '{_importConfig}'. Exception: {exception.Message}");
+            }
+
+            return "asdf";
         }
 
         private static string CurrentTime() => $"[{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}]";

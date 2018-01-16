@@ -7,17 +7,24 @@ namespace SolutionManager.App.Configuration
     [XmlRoot]
     public class ImportConfiguration
     {
-        [XmlAttribute("showImportProgress")]
-        public bool ShowImportProgress { get; set; }
+        [XmlElement]
+        public string Name { get; set; }
+
+        [XmlElement]
+        public string Description { get; set; }
 
         [XmlArray]
-        [XmlArrayItem("SolutionFile")]
-        public SolutionFile[] SolutionFiles { get; set; }
+        [XmlArrayItem("Organization")]
+        public Organization[] Organizations { get; set; }
+
+        [XmlArray]
+        [XmlArrayItem("WorkItem")]
+        public WorkItem[] WorkItems { get; set; }
 
         public bool Validate()
         {
-            if (SolutionFiles == null)
-                throw new Exception("No solution files found in config.");
+            if (WorkItems == null)
+                throw new Exception("No work items were found in config.");
 
             return true;
         }

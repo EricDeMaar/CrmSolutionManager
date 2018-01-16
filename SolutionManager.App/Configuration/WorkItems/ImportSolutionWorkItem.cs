@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Xml.Serialization;
 
-namespace SolutionManager.App.Configuration
+namespace SolutionManager.App.Configuration.WorkItems
 {
     [Serializable]
-    public class SolutionImportSettings
+    public class ImportSolutionWorkItem : WorkItem
     {
         [XmlElement]
-        public bool ConvertToManaged { get; set; }
+        public string FileName { get; set; }
+
+        [XmlElement]
+        public bool ShowImportProgress { get; set; }
 
         [XmlElement]
         public bool OverwriteUnmanagedCustomizations { get; set; }
@@ -20,5 +23,10 @@ namespace SolutionManager.App.Configuration
 
         [XmlElement]
         public bool OverwriteIfSameVersionExists { get; set; }
+
+        public override bool Validate()
+        {
+            return true;
+        }
     }
 }
