@@ -13,6 +13,9 @@ namespace SolutionManager.App.Configuration.WorkItems
         public bool ShowImportProgress { get; set; }
 
         [XmlElement]
+        public bool HoldingSolution { get; set; }
+
+        [XmlElement]
         public bool OverwriteUnmanagedCustomizations { get; set; }
 
         [XmlElement]

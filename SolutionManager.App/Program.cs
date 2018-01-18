@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using Microsoft.Xrm.Sdk;
 using SolutionManager.Logic.DynamicsCrm;
 using SolutionManager.App.Helpers;
 using SolutionManager.App.Configuration;
-using SolutionManager.App.Extensions;
-using System.Linq;
 using SolutionManager.App.Configuration.WorkItems;
-using System.Collections.Generic;
+using SolutionManager.Logic.Messages;
 
 namespace SolutionManager.App
 {
@@ -98,67 +97,67 @@ namespace SolutionManager.App
             throw new InvalidOperationException($"WorkItem type {workItem.GetType()} is not supported.");
         }
 
-        private static bool ExecuteImport(IOrganizationService orgService, ImportSolutionWorkItem importSolution)
+        private static void ExecuteImport(IOrganizationService orgService, ImportSolutionWorkItem importSolution)
         {
             SolutionData solutionData = SolutionHelper.ReadVersionFromZip(importSolution.FileName);
 
             using (var crm = new CrmOrganization(orgService))
             {
-                bool startImport = crm.CompareSolutionVersion(solutionData.Version, solutionData.UniqueName, importSolution.OverwriteIfSameVersionExists);
-
-                if (startImport)
+                using (FileStream zip = File.Open(Path.Combine(_baseDirectory, $@"Solutions\{importSolution.FileName}"), FileMode.Open))
                 {
-                    using (FileStream zip = File.Open(Path.Combine(_baseDirectory, $@"Solutions\{importSolution.FileName}"), FileMode.Open))
+                    Console.WriteLine($"{CurrentTime()} - Starting with import of {importSolution.FileName}");
+                    var message = new ImportSolutionMessage(crm)
                     {
-                        Console.WriteLine($"{CurrentTime()} - Starting with import of {importSolution.FileName}");
+                        FileName = importSolution.FileName,
+                        SolutionFileStream = zip,
+                        HoldingSolution = importSolution.HoldingSolution,
+                        OverwriteIfSameVersionExists = importSolution.OverwriteIfSameVersionExists,
+                        OverwriteUnmanagedCustomizations = importSolution.OverwriteUnmanagedCustomizations,
+                        PublishWorkflows = importSolution.PublishWorkflows,
+                        SkipProductDependencies = importSolution.SkipProductDependencies,
+                    };
 
-                        var result = crm.ImportSolution(zip, importSolution.ToSolutionImportConfiguration(), true);
-
-                        if (result.Status == ImportResultStatus.Failure)
-                            return false;
-                    }
+                    crm.ExecuteMessage(message);
                 }
             }
-            return true;
         }
 
-        private static bool ExecuteExport(IOrganizationService orgService, ExportSolutionWorkItem exportSolution)
+        private static void ExecuteExport(IOrganizationService orgService, ExportSolutionWorkItem exportSolution)
         {
             Console.WriteLine($"{CurrentTime()} - Exporting solution {exportSolution.UniqueName}.");
             var writeToFile = Path.Combine(_solutionsDirectory, exportSolution.WriteToZipFile);
-            bool result;
 
             using (var crm = new CrmOrganization(orgService))
             {
-                result = crm.ExportSolution(exportSolution.UniqueName, writeToFile, exportSolution.ExportAsManaged);
+                var message = new ExportSolutionMessage(crm)
+                {
+                    UniqueName = exportSolution.UniqueName,
+                    ExportAsManaged = exportSolution.ExportAsManaged,
+                    OutputFile = writeToFile,
+                };
+
+                crm.ExecuteMessage(message);
             }
-
-            if (!result && !exportSolution.ContinueOnError)
-                return false;
-
-            if (!result && exportSolution.ContinueOnError)
-                return true;
-
-            Console.WriteLine($"{CurrentTime()} - Solution {exportSolution.UniqueName} was successfully exported to {exportSolution.WriteToZipFile}");
-
-            return true;
         }
 
-        public static bool ExecuteDelete(IOrganizationService orgService, DeleteSolutionWorkItem deleteSolution)
+        public static void ExecuteDelete(IOrganizationService orgService, DeleteSolutionWorkItem deleteSolution)
         {
             if (deleteSolution.UniqueName == null && deleteSolution.ContinueOnError)
-                return true;
+                return;
 
             if (deleteSolution.UniqueName == null && !deleteSolution.ContinueOnError)
             {
                 PrintAbortMessage();
-                return false;
             }
 
             using (var crm = new CrmOrganization(orgService))
             {
-                crm.DeleteSolution(deleteSolution.UniqueName);
-                return true;
+                var message = new DeleteSolutionMessage(crm)
+                {
+                    UniqueName = deleteSolution.UniqueName,
+                };
+
+                crm.ExecuteMessage(message);
             }
         }
 

@@ -77,15 +77,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DynamicsCrm\CrmErrorCodes.cs" />
+    <Compile Include="Messages\RetrieveSolutionDataMessage.cs" />
+    <Compile Include="Results\RetrieveSolutionDataResult.cs" />
+    <Compile Include="Sdk\CrmErrorCodes.cs" />
     <Compile Include="DynamicsCrm\CrmOrganization.cs" />
     <Compile Include="DynamicsCrm\Solution.cs" />
-    <Compile Include="DynamicsCrm\SolutionImportConfiguration.cs" />
-    <Compile Include="DynamicsCrm\SolutionImportResult.cs" />
+    <Compile Include="Helpers\Logger.cs" />
+    <Compile Include="Messages\DeleteSolutionMessage.cs" />
+    <Compile Include="Messages\ExportSolutionMessage.cs" />
+    <Compile Include="Messages\ImportSolutionMessage.cs" />
+    <Compile Include="Messages\Message.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Results\ImportSolutionResult.cs" />
+    <Compile Include="Results\Result.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

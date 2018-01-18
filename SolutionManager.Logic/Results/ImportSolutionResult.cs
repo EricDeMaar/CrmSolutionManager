@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace SolutionManager.Logic.DynamicsCrm
+namespace SolutionManager.Logic.Results
 {
-    public struct SolutionImportResult
+    public class ImportSolutionResult : Result
     {
         public Guid ImportJobId;
         public ImportResultStatus Status;

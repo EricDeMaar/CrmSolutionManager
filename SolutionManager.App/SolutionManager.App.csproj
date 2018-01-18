@@ -92,7 +92,6 @@
     <Compile Include="Configuration\WorkItems\DeleteSolutionWorkItem.cs" />
     <Compile Include="Configuration\WorkItems\ExportSolutionWorkItem.cs" />
     <Compile Include="Configuration\WorkItems\ImportSolutionWorkItem.cs" />
-    <Compile Include="Extensions\ImportSolutionWorkItemExtensions.cs" />
     <Compile Include="Helpers\OrganizationHelper.cs" />
     <Compile Include="Helpers\SolutionData.cs" />
     <Compile Include="Helpers\SolutionHelper.cs" />

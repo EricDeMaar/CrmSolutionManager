@@ -1,4 +1,4 @@
-﻿namespace SolutionManager.Logic.DynamicsCrm
+﻿namespace SolutionManager.Logic.Sdk
 {
     public static class CrmErrorCodes
     {
