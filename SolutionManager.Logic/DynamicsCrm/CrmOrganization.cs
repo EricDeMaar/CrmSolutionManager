@@ -5,38 +5,23 @@ using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using SolutionManager.Logic.Messages;
+using SolutionManager.Logic.Results;
 
 namespace SolutionManager.Logic.DynamicsCrm
 {
     public class CrmOrganization : IDisposable
     {
-        public IOrganizationService OrganizationService { get; }
+        private IOrganizationService OrganizationService { get; }
 
         public CrmOrganization(IOrganizationService organizationService)
         {
             OrganizationService = organizationService;
         }
 
-        public void ExecuteMessage(Message message)
+        public Result ExecuteMessage(Message message)
         {
-            message.Execute();
-        }
-
-        // Todo: Work this out as a Message
-        public Solution GetSolutionByName(string solutionName)
-        {
-            QueryExpression querySolution = new QueryExpression
-            {
-                EntityName = Solution.EntityLogicalName,
-                ColumnSet = new ColumnSet(new string[] { "installedon", "version", "versionnumber", "friendlyname", "uniquename" }),
-                Criteria = new FilterExpression()
-            };
-
-            querySolution.Criteria.AddCondition("uniquename", ConditionOperator.Equal, solutionName);
-            Solution solution = (Solution)OrganizationService.RetrieveMultiple(querySolution).Entities[0];
-
-            return solution;
-        }        
+            return message.Execute();
+        }     
 
         #region Helpers for Execute & Retrieve & Update & Delete
         [DebuggerStepThrough]
@@ -49,6 +34,12 @@ namespace SolutionManager.Logic.DynamicsCrm
         public Entity Retrieve(string entityName, Guid id, ColumnSet columnSet)
         {
             return OrganizationService.Retrieve(entityName, id, columnSet);
+        }
+
+        [DebuggerStepThrough]
+        public EntityCollection RetrieveMultiple(QueryExpression query)
+        {
+            return OrganizationService.RetrieveMultiple(query);
         }
 
         [DebuggerStepThrough]

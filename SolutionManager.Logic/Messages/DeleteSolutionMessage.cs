@@ -12,19 +12,22 @@ namespace SolutionManager.Logic.Messages
 
         public override Result Execute()
         {
-            // Todo
-            var solution = this.CrmOrganization.GetSolutionByName(this.UniqueName);
+            var message = new RetrieveSolutionDataMessage(this.CrmOrganization)
+            {
+                UniqueName = this.UniqueName,
+            };
+            var result = (RetrieveSolutionDataResult)this.CrmOrganization.ExecuteMessage(message);
 
-            if (solution == null)
+            if (result.Solution == null)
             {
                 Logger.Log($"The solution {this.UniqueName} was not found in the target system");
             }
 
-            Logger.Log($"Deleting solution {solution.UniqueName} with version {solution.Version} from target system.");
+            Logger.Log($"Deleting solution {result.Solution.UniqueName} with version {result.Solution.Version} from target system.");
 
-            this.CrmOrganization.Delete("solution", solution.SolutionId);
+            this.CrmOrganization.Delete("solution", result.Solution.SolutionId);
 
-            var retrieveSolution = this.CrmOrganization.GetEntityByField("solution", "solutionid", solution.SolutionId);
+            var retrieveSolution = this.CrmOrganization.GetEntityByField("solution", "solutionid", result.Solution.SolutionId);
 
             if (retrieveSolution != null)
             {

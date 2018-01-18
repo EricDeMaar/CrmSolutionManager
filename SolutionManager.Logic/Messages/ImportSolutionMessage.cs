@@ -118,39 +118,41 @@ namespace SolutionManager.Logic.Messages
 
         private bool CompareSolutionVersion(Version version, string solutionName)
         {
-            Solution solution = this.CrmOrganization.GetSolutionByName(solutionName);
+            var message = new RetrieveSolutionDataMessage(this.CrmOrganization)
+            {
+                UniqueName = solutionName,
+            };
 
-            if (solution == null)
+            var result = (RetrieveSolutionDataResult)this.CrmOrganization.ExecuteMessage(message);
+
+            if (result.Solution == null)
             {
                 Logger.Log($"The solution {solutionName} was not found in the target system.");
                 return true;
             }
 
-            if (solution != null)
+            if (version == result.Solution.GetVersion())
             {
-                if (version == solution.GetVersion())
+                if (this.OverwriteIfSameVersionExists)
                 {
-                    if (this.OverwriteIfSameVersionExists)
-                    {
-                        Logger.Log($"Found solution {solution.UniqueName} with the same version {solution.Version} in target system. Overwriting...");
-                        return true;
-                    }
-
-                    Logger.Log($"Found solution {solution.UniqueName} in target system - version {solution.Version} is already loaded.");
-                    return false;
-                }
-
-                if (version < solution.GetVersion())
-                {
-                    Logger.Log($"Found solution {solution.UniqueName} in target system - a higher version ({solution.Version}) is already loaded.");
-                    return false;
-                }
-
-                if (version > solution.GetVersion())
-                {
-                    Logger.Log($"Found solution {solution.UniqueName} with lower version {solution.Version} in target system - starting update.");
+                    Logger.Log($"Found solution {result.Solution.UniqueName} with the same version {result.Solution.Version} in target system. Overwriting...");
                     return true;
                 }
+
+                Logger.Log($"Found solution {result.Solution.UniqueName} in target system - version {result.Solution.Version} is already loaded.");
+                return false;
+            }
+
+            if (version < result.Solution.GetVersion())
+            {
+                Logger.Log($"Found solution {result.Solution.UniqueName} in target system - a higher version ({result.Solution.Version}) is already loaded.");
+                return false;
+            }
+
+            if (version > result.Solution.GetVersion())
+            {
+                Logger.Log($"Found solution {result.Solution.UniqueName} with lower version {result.Solution.Version} in target system - starting update.");
+                return true;
             }
 
             return false;

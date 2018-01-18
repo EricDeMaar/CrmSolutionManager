@@ -20,7 +20,7 @@ namespace SolutionManager.Logic.Messages
             };
 
             querySolution.Criteria.AddCondition("uniquename", ConditionOperator.Equal, this.UniqueName);
-            Solution solution = (Solution)this.CrmOrganization.OrganizationService.RetrieveMultiple(querySolution).Entities[0];
+            Solution solution = (Solution)this.CrmOrganization.RetrieveMultiple(querySolution).Entities[0];
 
             return new RetrieveSolutionDataResult()
             {
