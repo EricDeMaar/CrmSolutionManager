@@ -62,10 +62,6 @@
     <Reference Include="System.DirectoryServices" />
     <Reference Include="System.DirectoryServices.AccountManagement" />
     <Reference Include="System.IdentityModel" />
-    <Reference Include="System.IO.Compression, Version=4.1.2.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.IO.Compression.4.3.0\lib\net46\System.IO.Compression.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.IO.Compression.FileSystem">
       <Private>True</Private>
     </Reference>
@@ -93,9 +89,6 @@
     <Compile Include="Configuration\WorkItems\ExportSolutionWorkItem.cs" />
     <Compile Include="Configuration\WorkItems\ImportSolutionWorkItem.cs" />
     <Compile Include="Helpers\OrganizationHelper.cs" />
-    <Compile Include="Helpers\SolutionData.cs" />
-    <Compile Include="Helpers\SolutionHelper.cs" />
-    <Compile Include="Helpers\SolutionXml.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

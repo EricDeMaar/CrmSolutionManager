@@ -99,8 +99,6 @@ namespace SolutionManager.App
 
         private static void ExecuteImport(IOrganizationService orgService, ImportSolutionWorkItem importSolution)
         {
-            SolutionData solutionData = SolutionHelper.ReadVersionFromZip(importSolution.FileName);
-
             using (var crm = new CrmOrganization(orgService))
             {
                 using (FileStream zip = File.Open(Path.Combine(_baseDirectory, $@"Solutions\{importSolution.FileName}"), FileMode.Open))
@@ -159,63 +157,6 @@ namespace SolutionManager.App
 
                 crm.ExecuteMessage(message);
             }
-        }
-
-        private static string GenerateXml()
-        {
-            ImportConfiguration x = new ImportConfiguration();
-
-            x.Name = "WorkDefinition 1";
-            x.Description = "This is a WorkDefinition.";
-            x.Organizations = new Organization[]
-            {
-                new Organization()
-                {
-                    DomainName = "domain",
-                    OrganizationName = "OrganizationName",
-                    OrganizationUri = "organizationUri",
-                    Password = "Password",
-                    UserName = "UserName",
-                }
-            };
-            x.WorkItems = new WorkItem[]
-            {
-                new ImportSolutionWorkItem()
-                {
-                    ContinueOnError = true,
-                    FileName = "FileName",
-                    OrganizationName = "OrganizationName",
-                    OverwriteIfSameVersionExists = true,
-                    OverwriteUnmanagedCustomizations = true,
-                    PublishWorkflows = true,
-                    ShowImportProgress = true,
-                    SkipProductDependencies = false,
-                },
-                new DeleteSolutionWorkItem()
-                {
-                    UniqueName = "SolutionName",
-                    ContinueOnError = true,
-                    OrganizationName = "OrganizationName"
-                }
-            };
-
-            try
-            {
-                var xmlSerializer = new XmlSerializer(typeof(ImportConfiguration));
-
-                using (StringWriter textWriter = new StringWriter())
-                {
-                    xmlSerializer.Serialize(textWriter, x);
-                    var lala = textWriter.ToString();
-                    return lala;
-                }
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine($"{CurrentTime()} - Error reading configuration '{_importConfig}'. Exception: {exception.Message}");
-            }
-
-            return "asdf";
         }
 
         private static string CurrentTime() => $"[{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}]";

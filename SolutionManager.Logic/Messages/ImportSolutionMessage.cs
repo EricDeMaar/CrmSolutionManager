@@ -1,11 +1,15 @@
 ﻿using System;
-using System.Threading;
-using System.ServiceModel;
-using System.IO;
 using System.Globalization;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.ServiceModel;
+using System.Threading;
 using System.Xml;
-using Microsoft.Xrm.Sdk;
+using System.Xml.Linq;
+using System.Xml.Serialization;
 using Microsoft.Crm.Sdk.Messages;
+using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Query;
 using SolutionManager.Logic.DynamicsCrm;
@@ -45,10 +49,18 @@ namespace SolutionManager.Logic.Messages
             var buffer = new byte[(int)this.SolutionFileStream.Length];
             this.SolutionFileStream.Read(buffer, 0, buffer.Length);
 
-            Entity job;
+            Solution zipSolution = this.ReadSolutionXmlFromZip(this.SolutionFileStream);
+            bool startImport = this.CompareSolutionVersion(zipSolution.GetVersion(), zipSolution.UniqueName);
 
-            this.ProgressPollingThread = new Thread(new ParameterizedThreadStart(ImportSolutionProgress));
-            this.ProgressPollingThread.Start(this.ImportJobId);
+            if (!startImport)
+            {
+                return new Result()
+                {
+                    Success = false
+                };
+            }
+
+            Entity job;
 
             try
             {
@@ -106,7 +118,10 @@ namespace SolutionManager.Logic.Messages
                 throw;
             }
 
+            this.ProgressPollingThread = new Thread(new ParameterizedThreadStart(ImportSolutionProgress));
+            this.ProgressPollingThread.Start(this.ImportJobId);
             this.ProgressPollingThread.Join();
+
             job = this.CrmOrganization.GetEntityByField("importjob", "importjobid", this.ImportJobId);
 
             ImportSolutionResult status = CreateImportStatus(job);
@@ -114,6 +129,26 @@ namespace SolutionManager.Logic.Messages
             Logger.Log($"Solution {this.FileName} was imported with status {status.Status.ToString()}");
 
             return status;
+        }
+
+        private Solution ReadSolutionXmlFromZip(FileStream zip)
+        {
+            using (var zipfile = new ZipArchive(zip, ZipArchiveMode.Read))
+            {
+                var solutionInfo = zipfile.Entries.First(x => x.Name == "solution.xml");
+
+                using (var dataStream = solutionInfo.Open())
+                {
+                    var xml = XElement.Load(new StreamReader(dataStream)).CreateReader();
+                    var data = new XmlSerializer(typeof(SolutionXml.ImportExportXml)).Deserialize(xml) as SolutionXml.ImportExportXml;
+
+                    return new Solution()
+                    {
+                        UniqueName = data.SolutionManifest.UniqueName,
+                        Version = data.SolutionManifest.Version.ToString(),
+                    };
+                }
+            }
         }
 
         private bool CompareSolutionVersion(Version version, string solutionName)
@@ -168,7 +203,10 @@ namespace SolutionManager.Logic.Messages
                 var job = this.CrmOrganization.GetEntityByField("importjob", "importjobid", (Guid)importJobId);
 
                 if (job == null)
+                {
+                    Logger.Log($"Job with id {importJobId} was not found");
                     continue;
+                }
 
                 decimal progress = Convert.ToDecimal(job["progress"]);
 
