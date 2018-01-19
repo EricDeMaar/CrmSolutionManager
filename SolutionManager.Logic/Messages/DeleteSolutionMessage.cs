@@ -16,7 +16,7 @@ namespace SolutionManager.Logic.Messages
             {
                 UniqueName = this.UniqueName,
             };
-            var result = (RetrieveSolutionDataResult)this.CrmOrganization.ExecuteMessage(message);
+            var result = (RetrieveSolutionDataResult)this.CrmOrganization.Execute(message);
 
             if (result.Solution == null)
             {

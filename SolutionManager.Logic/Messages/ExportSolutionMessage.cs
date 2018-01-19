@@ -20,6 +20,25 @@ namespace SolutionManager.Logic.Messages
             if (this.UniqueName == null || this.OutputFile == null)
                 throw new InvalidOperationException("UniqueName and/or OutputFile is not in a correct format");
 
+            var message = new RetrieveSolutionDataMessage(this.CrmOrganization)
+            {
+                UniqueName = this.UniqueName,
+            };
+
+            var retrieveSolutionResult = (RetrieveSolutionDataResult)this.CrmOrganization.Execute(message);
+
+            if (retrieveSolutionResult.Solution == null)
+            {
+                Logger.Log($"The solution {this.UniqueName} was not found in the target system.");
+                return new Result() { Success = false };
+            }
+
+            if (retrieveSolutionResult.Solution.IsManaged == false)
+            {
+                Logger.Log($"The solution {this.UniqueName} is a managed solution and cannot be exported.");
+                return new Result() { Success = false };
+            }
+
             var result = this.CrmOrganization.Execute<ExportSolutionResponse>(new ExportSolutionRequest
             {
                 SolutionName = this.UniqueName,

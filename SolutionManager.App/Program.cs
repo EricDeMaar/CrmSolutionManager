@@ -10,6 +10,7 @@ using SolutionManager.App.Helpers;
 using SolutionManager.App.Configuration;
 using SolutionManager.App.Configuration.WorkItems;
 using SolutionManager.Logic.Messages;
+using SolutionManager.Logic.Helpers;
 
 namespace SolutionManager.App
 {
@@ -25,8 +26,6 @@ namespace SolutionManager.App
         {
             Console.SetWindowSize(150, 25);
 
-            //GenerateXml();
-
             using (var xml = XElement.Load(_importConfig).CreateReader())
             {
                 ImportConfiguration config = null;
@@ -36,7 +35,7 @@ namespace SolutionManager.App
                 }
                 catch (Exception exception)
                 {
-                    Console.WriteLine($"{CurrentTime()} - Error reading configuration '{_importConfig}'. Exception: {exception.Message}");
+                    Logger.Log($"Error reading configuration '{_importConfig}'. Exception: {exception.Message}");
                 }
 
                 if (config == null)
@@ -70,7 +69,7 @@ namespace SolutionManager.App
                 }
             }
 
-            Console.WriteLine($"{CurrentTime()} - All solution files have been processed. Press any key to exit.");
+            Logger.Log("All solution files have been processed. Press any key to exit.");
             Console.ReadKey();
         }
 
@@ -103,7 +102,7 @@ namespace SolutionManager.App
             {
                 using (FileStream zip = File.Open(Path.Combine(_baseDirectory, $@"Solutions\{importSolution.FileName}"), FileMode.Open))
                 {
-                    Console.WriteLine($"{CurrentTime()} - Starting with import of {importSolution.FileName}");
+                    Logger.Log($"Starting with import of {importSolution.FileName}");
                     var message = new ImportSolutionMessage(crm)
                     {
                         FileName = importSolution.FileName,
@@ -115,14 +114,14 @@ namespace SolutionManager.App
                         SkipProductDependencies = importSolution.SkipProductDependencies,
                     };
 
-                    crm.ExecuteMessage(message);
+                    crm.Execute(message);
                 }
             }
         }
 
         private static void ExecuteExport(IOrganizationService orgService, ExportSolutionWorkItem exportSolution)
         {
-            Console.WriteLine($"{CurrentTime()} - Exporting solution {exportSolution.UniqueName}.");
+            Logger.Log($"Exporting solution {exportSolution.UniqueName}.");
             var writeToFile = Path.Combine(_solutionsDirectory, exportSolution.WriteToZipFile);
 
             using (var crm = new CrmOrganization(orgService))
@@ -134,20 +133,12 @@ namespace SolutionManager.App
                     OutputFile = writeToFile,
                 };
 
-                crm.ExecuteMessage(message);
+                crm.Execute(message);
             }
         }
 
         public static void ExecuteDelete(IOrganizationService orgService, DeleteSolutionWorkItem deleteSolution)
         {
-            if (deleteSolution.UniqueName == null && deleteSolution.ContinueOnError)
-                return;
-
-            if (deleteSolution.UniqueName == null && !deleteSolution.ContinueOnError)
-            {
-                PrintAbortMessage();
-            }
-
             using (var crm = new CrmOrganization(orgService))
             {
                 var message = new DeleteSolutionMessage(crm)
@@ -155,10 +146,8 @@ namespace SolutionManager.App
                     UniqueName = deleteSolution.UniqueName,
                 };
 
-                crm.ExecuteMessage(message);
+                crm.Execute(message);
             }
         }
-
-        private static string CurrentTime() => $"[{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}]";
     }
 }

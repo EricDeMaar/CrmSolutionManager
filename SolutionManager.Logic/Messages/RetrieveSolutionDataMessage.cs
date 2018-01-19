@@ -1,4 +1,5 @@
-﻿using Microsoft.Xrm.Sdk.Query;
+﻿using System;
+using Microsoft.Xrm.Sdk.Query;
 using SolutionManager.Logic.DynamicsCrm;
 using SolutionManager.Logic.Results;
 
@@ -12,10 +13,15 @@ namespace SolutionManager.Logic.Messages
 
         public override Result Execute()
         {
+            if (string.IsNullOrEmpty(this.UniqueName))
+            {
+                throw new ArgumentNullException(nameof(this.UniqueName));
+            }
+
             QueryExpression querySolution = new QueryExpression
             {
                 EntityName = Solution.EntityLogicalName,
-                ColumnSet = new ColumnSet(new string[] { "installedon", "version", "versionnumber", "friendlyname", "uniquename" }),
+                ColumnSet = new ColumnSet(new string[] { "installedon", "version", "versionnumber", "friendlyname", "uniquename", "description", "ismanaged" }),
                 Criteria = new FilterExpression()
             };
 

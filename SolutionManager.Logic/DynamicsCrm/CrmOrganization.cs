@@ -18,12 +18,12 @@ namespace SolutionManager.Logic.DynamicsCrm
             OrganizationService = organizationService;
         }
 
-        public Result ExecuteMessage(Message message)
+        [DebuggerStepThrough]
+        public Result Execute(Message message)
         {
             return message.Execute();
-        }     
+        }
 
-        #region Helpers for Execute & Retrieve & Update & Delete
         [DebuggerStepThrough]
         public void Execute(OrganizationRequest request)
         {
@@ -91,7 +91,6 @@ namespace SolutionManager.Logic.DynamicsCrm
         {
             OrganizationService.Delete(entityName, id);
         }
-        #endregion
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

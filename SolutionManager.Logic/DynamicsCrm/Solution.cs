@@ -52,6 +52,32 @@ namespace SolutionManager.Logic.DynamicsCrm
             }
         }
 
+        [AttributeLogicalNameAttribute("ismanaged")]
+        public bool IsManaged
+        {
+            get
+            {
+                return this.GetAttributeValue<bool>("ismanaged");
+            }
+            set
+            {
+                this.SetAttributeValue("ismanaged", value);
+            }
+        }
+
+        [AttributeLogicalNameAttribute("description")]
+        public string Description
+        {
+            get
+            {
+                return this.GetAttributeValue<string>("description");
+            }
+            set
+            {
+                this.SetAttributeValue("description", value);
+            }
+        }
+
         public Version GetVersion()
         {
             Version version;
