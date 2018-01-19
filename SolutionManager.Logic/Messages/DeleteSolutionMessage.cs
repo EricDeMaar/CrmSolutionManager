@@ -1,5 +1,5 @@
 ﻿using SolutionManager.Logic.DynamicsCrm;
-using SolutionManager.Logic.Helpers;
+using SolutionManager.Logic.Logging;
 using SolutionManager.Logic.Results;
 
 namespace SolutionManager.Logic.Messages
@@ -20,10 +20,10 @@ namespace SolutionManager.Logic.Messages
 
             if (result.Solution == null)
             {
-                Logger.Log($"The solution {this.UniqueName} was not found in the target system");
+                Logger.Log($"The solution {this.UniqueName} was not found in the target system", LogLevel.Warning);
             }
 
-            Logger.Log($"Deleting solution {result.Solution.UniqueName} with version {result.Solution.Version} from target system.");
+            Logger.Log($"Deleting solution {result.Solution.UniqueName} with version {result.Solution.Version} from target system.", LogLevel.Info);
 
             this.CrmOrganization.Delete("solution", result.Solution.SolutionId);
 
@@ -31,15 +31,22 @@ namespace SolutionManager.Logic.Messages
 
             if (retrieveSolution != null)
             {
-                Logger.Log("The solution still exists.");
+                Logger.Log("The solution still exists.", LogLevel.Warning);
+
+                return new Result()
+                {
+                    Success = false,
+                };
             }
-
-            Logger.Log("The solution has been deleted.");
-
-            return new Result()
+            else
             {
-                Success = true,
-            };
+                Logger.Log("The solution has been deleted.", LogLevel.Info);
+
+                return new Result()
+                {
+                    Success = true,
+                };
+            }
         }
     }
 }

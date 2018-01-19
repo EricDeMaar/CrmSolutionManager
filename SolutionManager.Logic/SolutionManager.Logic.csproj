@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Crm.Sdk.Proxy, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.CrmSdk.CoreAssemblies.9.0.0.7\lib\net452\Microsoft.Crm.Sdk.Proxy.dll</HintPath>
     </Reference>
@@ -81,12 +84,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Logging\Logger.cs" />
+    <Compile Include="Logging\LogLevel.cs" />
     <Compile Include="Messages\RetrieveSolutionDataMessage.cs" />
     <Compile Include="Results\RetrieveSolutionDataResult.cs" />
     <Compile Include="Sdk\CrmErrorCodes.cs" />
     <Compile Include="DynamicsCrm\CrmOrganization.cs" />
-    <Compile Include="DynamicsCrm\Solution.cs" />
-    <Compile Include="Helpers\Logger.cs" />
+    <Compile Include="Sdk\Solution.cs" />
     <Compile Include="Messages\DeleteSolutionMessage.cs" />
     <Compile Include="Messages\ExportSolutionMessage.cs" />
     <Compile Include="Messages\ImportSolutionMessage.cs" />

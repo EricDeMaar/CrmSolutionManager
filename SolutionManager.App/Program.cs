@@ -10,7 +10,7 @@ using SolutionManager.App.Helpers;
 using SolutionManager.App.Configuration;
 using SolutionManager.App.Configuration.WorkItems;
 using SolutionManager.Logic.Messages;
-using SolutionManager.Logic.Helpers;
+using SolutionManager.Logic.Logging;
 
 namespace SolutionManager.App
 {
@@ -35,7 +35,7 @@ namespace SolutionManager.App
                 }
                 catch (Exception exception)
                 {
-                    Logger.Log($"Error reading configuration '{_importConfig}'. Exception: {exception.Message}");
+                    Logger.Log($"Error reading configuration '{_importConfig}'. Exception: {exception.Message}", LogLevel.Debug);
                 }
 
                 if (config == null)
@@ -61,7 +61,9 @@ namespace SolutionManager.App
                     Organization org = config.Organizations.Where(x => x.OrganizationName == workItem.OrganizationName).FirstOrDefault();
 
                     if (org == null)
-                        throw new NullReferenceException($"Organization with name {workItem.OrganizationName} was not found in the config.");
+                    {
+                        Logger.Log($"Organization with name {workItem.OrganizationName} was not found in the config.", LogLevel.Warning, new NullReferenceException($"Organization with name {workItem.OrganizationName} was not found in the config."));
+                    }
 
                     var crm = OrganizationHelper.CreateOrganizationService(org);
 
@@ -69,7 +71,7 @@ namespace SolutionManager.App
                 }
             }
 
-            Logger.Log("All solution files have been processed. Press any key to exit.");
+            Logger.Log("All solution files have been processed. Press any key to exit.", LogLevel.Info);
             Console.ReadKey();
         }
 
@@ -93,7 +95,7 @@ namespace SolutionManager.App
                 return;
             }
 
-            throw new InvalidOperationException($"WorkItem type {workItem.GetType()} is not supported.");
+            Logger.Log($"WorkItem type {workItem.GetType()} is not supported.", LogLevel.Warning, new InvalidOperationException($"WorkItem type {workItem.GetType()} is not supported."));
         }
 
         private static void ExecuteImport(IOrganizationService orgService, ImportSolutionWorkItem importSolution)
@@ -102,7 +104,7 @@ namespace SolutionManager.App
             {
                 using (FileStream zip = File.Open(Path.Combine(_baseDirectory, $@"Solutions\{importSolution.FileName}"), FileMode.Open))
                 {
-                    Logger.Log($"Starting with import of {importSolution.FileName}");
+                    Logger.Log($"Starting with import of {importSolution.FileName}", LogLevel.Info);
                     var message = new ImportSolutionMessage(crm)
                     {
                         FileName = importSolution.FileName,
@@ -121,7 +123,7 @@ namespace SolutionManager.App
 
         private static void ExecuteExport(IOrganizationService orgService, ExportSolutionWorkItem exportSolution)
         {
-            Logger.Log($"Exporting solution {exportSolution.UniqueName}.");
+            Logger.Log($"Exporting solution {exportSolution.UniqueName}.", LogLevel.Info);
             var writeToFile = Path.Combine(_solutionsDirectory, exportSolution.WriteToZipFile);
 
             using (var crm = new CrmOrganization(orgService))

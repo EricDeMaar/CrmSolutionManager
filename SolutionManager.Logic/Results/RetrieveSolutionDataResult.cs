@@ -1,4 +1,5 @@
 ﻿using SolutionManager.Logic.DynamicsCrm;
+using SolutionManager.Logic.Sdk;
 
 namespace SolutionManager.Logic.Results
 {

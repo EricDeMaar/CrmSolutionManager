@@ -13,7 +13,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Query;
 using SolutionManager.Logic.DynamicsCrm;
-using SolutionManager.Logic.Helpers;
+using SolutionManager.Logic.Logging;
 using SolutionManager.Logic.Results;
 using SolutionManager.Logic.Sdk;
 
@@ -126,7 +126,7 @@ namespace SolutionManager.Logic.Messages
 
             ImportSolutionResult status = CreateImportStatus(job);
 
-            Logger.Log($"Solution {this.FileName} was imported with status {status.Status.ToString()}");
+            Logger.Log($"Solution {this.FileName} was imported with status {status.Status.ToString()}", LogLevel.Info);
 
             return status;
         }
@@ -135,7 +135,7 @@ namespace SolutionManager.Logic.Messages
         {
             using (var zipfile = new ZipArchive(zip, ZipArchiveMode.Read))
             {
-                var solutionInfo = zipfile.Entries.First(x => x.Name == "solution.xml");
+                ZipArchiveEntry solutionInfo = zipfile.Entries.First(x => x.Name == "solution.xml");
 
                 using (var dataStream = solutionInfo.Open())
                 {
@@ -162,7 +162,7 @@ namespace SolutionManager.Logic.Messages
 
             if (result.Solution == null)
             {
-                Logger.Log($"The solution {solutionName} was not found in the target system.");
+                Logger.Log($"The solution {solutionName} was not found in the target system.", LogLevel.Info);
                 return true;
             }
 
@@ -170,23 +170,23 @@ namespace SolutionManager.Logic.Messages
             {
                 if (this.OverwriteIfSameVersionExists)
                 {
-                    Logger.Log($"Found solution {result.Solution.UniqueName} with the same version {result.Solution.Version} in target system. Overwriting...");
+                    Logger.Log($"Found solution {result.Solution.UniqueName} with the same version {result.Solution.Version} in target system. Overwriting...", LogLevel.Info);
                     return true;
                 }
 
-                Logger.Log($"Found solution {result.Solution.UniqueName} in target system - version {result.Solution.Version} is already loaded.");
+                Logger.Log($"Found solution {result.Solution.UniqueName} in target system - version {result.Solution.Version} is already loaded.", LogLevel.Info);
                 return false;
             }
 
             if (version < result.Solution.GetVersion())
             {
-                Logger.Log($"Found solution {result.Solution.UniqueName} in target system - a higher version ({result.Solution.Version}) is already loaded.");
+                Logger.Log($"Found solution {result.Solution.UniqueName} in target system - a higher version ({result.Solution.Version}) is already loaded.", LogLevel.Info);
                 return false;
             }
 
             if (version > result.Solution.GetVersion())
             {
-                Logger.Log($"Found solution {result.Solution.UniqueName} with lower version {result.Solution.Version} in target system - starting update.");
+                Logger.Log($"Found solution {result.Solution.UniqueName} with lower version {result.Solution.Version} in target system - starting update.", LogLevel.Info);
                 return true;
             }
 
@@ -204,7 +204,7 @@ namespace SolutionManager.Logic.Messages
 
                 if (job == null)
                 {
-                    Logger.Log($"Job with id {importJobId} was not found");
+                    Logger.Log($"Job with id {importJobId} was not found", LogLevel.Info);
                     continue;
                 }
 
@@ -212,11 +212,12 @@ namespace SolutionManager.Logic.Messages
 
                 if (progress == 100)
                 {
-                    Logger.Log("Solution import is at 100%");
+                    Logger.Log("Solution import is at 100%", LogLevel.Info);
                     break;
                 }
 
-                Console.Write($"Solution import is at {progress.ToString("N0")}%\r");
+                // Todo: Nice this up
+                Console.Write($"[{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}] - [INFO] - Solution import is at {progress.ToString("N0")}%\r");
             }
         }
 
@@ -246,6 +247,7 @@ namespace SolutionManager.Logic.Messages
                 {
                     ImportJobId = job.Id,
                     ErrorCode =
+                        string.IsNullOrEmpty(errorCode) ? 0 :
                         errorCode.StartsWith("0x")
                         ? int.Parse(errorCode.Substring(2), NumberStyles.HexNumber)
                         : int.Parse(errorCode),

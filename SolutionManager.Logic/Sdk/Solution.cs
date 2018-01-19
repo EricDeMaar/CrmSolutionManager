@@ -1,13 +1,16 @@
-﻿using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Client;
-using System;
+﻿using System;
 using System.Runtime.Serialization;
+using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Client;
 
-namespace SolutionManager.Logic.DynamicsCrm
+namespace SolutionManager.Logic.Sdk
 {
+    /// <summary>
+    /// Proxy class for a Dynamics CRM solution entity record.
+    /// </summary>
     [DataContractAttribute()]
     [EntityLogicalName("solution")]
-    public partial class Solution : Entity
+    public class Solution : Entity
     {
         public Solution() : base(EntityLogicalName) { }
 
@@ -80,9 +83,7 @@ namespace SolutionManager.Logic.DynamicsCrm
 
         public Version GetVersion()
         {
-            Version version;
-
-            if (System.Version.TryParse(this.Version, out version))
+            if (System.Version.TryParse(this.Version, out Version version))
             {
                 return version;
             }

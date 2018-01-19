@@ -2,7 +2,7 @@
 using System.IO;
 using Microsoft.Crm.Sdk.Messages;
 using SolutionManager.Logic.DynamicsCrm;
-using SolutionManager.Logic.Helpers;
+using SolutionManager.Logic.Logging;
 using SolutionManager.Logic.Results;
 
 namespace SolutionManager.Logic.Messages
@@ -18,7 +18,13 @@ namespace SolutionManager.Logic.Messages
         public override Result Execute()
         {
             if (this.UniqueName == null || this.OutputFile == null)
-                throw new InvalidOperationException("UniqueName and/or OutputFile is not in a correct format");
+            {
+                Logger.Log(
+                    $"Invalid input argument(s). UniqueName is {this.UniqueName}, OutputFile is {this.OutputFile}.",
+                    LogLevel.Warning,
+                    new InvalidOperationException("UniqueName and/or OutputFile is not in a correct format")
+                    );
+            }
 
             var message = new RetrieveSolutionDataMessage(this.CrmOrganization)
             {
@@ -29,13 +35,13 @@ namespace SolutionManager.Logic.Messages
 
             if (retrieveSolutionResult.Solution == null)
             {
-                Logger.Log($"The solution {this.UniqueName} was not found in the target system.");
+                Logger.Log($"The solution {this.UniqueName} was not found in the target system.", LogLevel.Warning);
                 return new Result() { Success = false };
             }
 
-            if (retrieveSolutionResult.Solution.IsManaged == false)
+            if (retrieveSolutionResult.Solution.IsManaged == true)
             {
-                Logger.Log($"The solution {this.UniqueName} is a managed solution and cannot be exported.");
+                Logger.Log($"The solution {this.UniqueName} is a managed solution and cannot be exported.", LogLevel.Warning);
                 return new Result() { Success = false };
             }
 
@@ -55,13 +61,12 @@ namespace SolutionManager.Logic.Messages
                 }
                 catch (IOException e)
                 {
-                    Logger.Log($"Exception thrown while deleting existing file: {e.Message}.");
-                    throw;
+                    Logger.Log($"Exception thrown while deleting existing file: {e.Message}.", LogLevel.Warning, e);
                 }
             }
 
             File.WriteAllBytes(this.OutputFile, exportXml);
-            Logger.Log($"Solution {this.UniqueName} was exported successfully.");
+            Logger.Log($"Solution {this.UniqueName} was exported successfully.", LogLevel.Info);
 
             return new Result()
             {

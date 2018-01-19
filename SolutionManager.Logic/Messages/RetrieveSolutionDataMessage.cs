@@ -2,6 +2,7 @@
 using Microsoft.Xrm.Sdk.Query;
 using SolutionManager.Logic.DynamicsCrm;
 using SolutionManager.Logic.Results;
+using SolutionManager.Logic.Sdk;
 
 namespace SolutionManager.Logic.Messages
 {
