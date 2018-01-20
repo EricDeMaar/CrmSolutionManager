@@ -107,13 +107,12 @@ namespace SolutionManager.App
                     Logger.Log($"Starting with import of {importSolution.FileName}", LogLevel.Info);
                     var message = new ImportSolutionMessage(crm)
                     {
-                        FileName = importSolution.FileName,
                         SolutionFileStream = zip,
                         HoldingSolution = importSolution.HoldingSolution,
                         OverwriteIfSameVersionExists = importSolution.OverwriteIfSameVersionExists,
                         OverwriteUnmanagedCustomizations = importSolution.OverwriteUnmanagedCustomizations,
                         PublishWorkflows = importSolution.PublishWorkflows,
-                        SkipProductDependencies = importSolution.SkipProductDependencies,
+                        SkipProductUpdateDependencies = importSolution.SkipProductDependencies,
                     };
 
                     crm.Execute(message);

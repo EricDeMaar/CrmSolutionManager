@@ -8,10 +8,17 @@ namespace SolutionManager.Logic.Messages
 {
     public class RetrieveSolutionDataMessage : Message
     {
+        /// <summary>
+        /// Gets or sets the unique name of the Dynamics CRM solution.
+        /// </summary>
         public string UniqueName { get; set; }
 
         public RetrieveSolutionDataMessage(CrmOrganization organization) : base(organization) { }
 
+        /// <summary>
+        /// Retrieves information about a Dynamics CRM solution in a target environment.
+        /// </summary>
+        /// <returns>A <seealso cref="RetrieveSolutionDataResult"/> object.</returns>
         public override Result Execute()
         {
             if (string.IsNullOrEmpty(this.UniqueName))

@@ -6,6 +6,12 @@ namespace SolutionManager.App.Helpers
 {
     public static class OrganizationHelper
     {
+        /// <summary>
+        /// A static helper method to create an OrganizationService object using
+        /// the given <seealso cref="Organization">credentials</seealso> object.
+        /// </summary>
+        /// <param name="credentials">The credentials which are used to build the connection string.</param>
+        /// <returns>An <seealso cref="Organization"/> object.</returns>
         public static IOrganizationService CreateOrganizationService(Organization credentials)
         {
             // Connect to the CRM web service using a connection string.

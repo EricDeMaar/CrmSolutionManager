@@ -21,26 +21,81 @@ namespace SolutionManager.Logic.Messages
 {
     public class ImportSolutionMessage : Message
     {
-        public string FileName { get; set; }
+        /// <summary>
+        /// Gets or sets the FileStream containing the Dynamics CRM solution file.
+        /// </summary>
         public FileStream SolutionFileStream { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the Dynamics CRM solution should be imported
+        /// using the holding solution mechanism.
+        /// </summary>
         public bool HoldingSolution { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the system should be directed to convert any
+        /// matching unmanaged customizations into your managed solution.
+        /// </summary>
         public bool ConvertToManaged { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether any unmanaged customizations that have been
+        /// applied over existing managed solution components should be overwritten. 
+        /// </summary>
         public bool OverwriteUnmanagedCustomizations { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether any processes (workflows) included in the
+        /// solution should be activated after they are imported.
+        /// </summary>
         public bool PublishWorkflows { get; set; }
-        public bool SkipProductDependencies { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether enforcement of dependencies related to product
+        /// updates should be skipped.
+        /// </summary>
+        public bool SkipProductUpdateDependencies { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether an existing solution should be overwritten in case that
+        /// a solution with the same version exists in the target environment.
+        /// </summary>
         public bool OverwriteIfSameVersionExists { get; set; }
 
+        /// <summary>
+        /// Gets or sets the unique identifier of the import job that will be
+        /// created to perform the SolutionImportRequest.
+        /// </summary>
         private Guid ImportJobId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the unique identifier of the asynchronous job that will be
+        /// created to perform the SolutionImportRequest.
+        /// </summary>
         private Guid AsyncJobId { get; set; }
-        private Thread ProgressPollingThread { get; set; }
+
+        /// <summary>
+        /// Returns the file name of the SolutionFileStream object.
+        /// </summary>
+        private string FileName
+        {
+            get
+            {
+                return Path.GetFileName(SolutionFileStream.Name);
+            }
+        }
+
 
         public ImportSolutionMessage(CrmOrganization organization) : base(organization)
         {
             this.ImportJobId = Guid.NewGuid();
             this.AsyncJobId = Guid.NewGuid();
-            this.ProgressPollingThread = null;
         }
 
+        /// <summary>
+        /// Imports a Dynamics CRM solution to a Dynamics CRM organization.
+        /// </summary>
+        /// <returns>An <seealso cref="ImportSolutionResult"/> object</returns>
         public override Result Execute()
         {
             if (this.SolutionFileStream == null)
@@ -72,7 +127,7 @@ namespace SolutionManager.Logic.Messages
                     ImportJobId = this.ImportJobId,
                     OverwriteUnmanagedCustomizations = this.OverwriteUnmanagedCustomizations,
                     PublishWorkflows = this.PublishWorkflows,
-                    SkipProductUpdateDependencies = this.SkipProductDependencies
+                    SkipProductUpdateDependencies = this.SkipProductUpdateDependencies
                 };
 
                 ExecuteAsyncRequest asyncRequest = new ExecuteAsyncRequest()
@@ -118,9 +173,7 @@ namespace SolutionManager.Logic.Messages
                 throw;
             }
 
-            this.ProgressPollingThread = new Thread(new ParameterizedThreadStart(ImportSolutionProgress));
-            this.ProgressPollingThread.Start(this.ImportJobId);
-            this.ProgressPollingThread.Join();
+            ImportSolutionProgress(this.ImportJobId);
 
             job = this.CrmOrganization.GetEntityByField("importjob", "importjobid", this.ImportJobId);
 
@@ -131,6 +184,11 @@ namespace SolutionManager.Logic.Messages
             return status;
         }
 
+        /// <summary>
+        /// Reads the Solution XML from a given Zip Archive.
+        /// </summary>
+        /// <param name="zip">A FileStream object containing the Zip archive.</param>
+        /// <returns>A <seealso cref="Solution"/> object</returns>
         private Solution ReadSolutionXmlFromZip(FileStream zip)
         {
             using (var zipfile = new ZipArchive(zip, ZipArchiveMode.Read))
@@ -151,6 +209,13 @@ namespace SolutionManager.Logic.Messages
             }
         }
 
+        /// <summary>
+        /// Compares the version of a Dynamics CRM solution in a target environment
+        /// with a given version.
+        /// </summary>
+        /// <param name="version">The version which has to be checked.</param>
+        /// <param name="solutionName">The unique name of the solution in the target environment.</param>
+        /// <returns></returns>
         private bool CompareSolutionVersion(Version version, string solutionName)
         {
             var message = new RetrieveSolutionDataMessage(this.CrmOrganization)
@@ -193,18 +258,22 @@ namespace SolutionManager.Logic.Messages
             return false;
         }
 
-        private void ImportSolutionProgress(object importJobId)
+        /// <summary>
+        /// Retrieves the status of an ImportJob and logs the import progress.
+        /// </summary>
+        /// <param name="importJobId">The unique identifier of the ImportJob.</param>
+        private void ImportSolutionProgress(Guid importJobId)
         {
             while (true)
             {
                 // Make sure that the request is fired after the ImportSolutionRequest has been executed
                 Thread.Sleep(5000);
 
-                var job = this.CrmOrganization.GetEntityByField("importjob", "importjobid", (Guid)importJobId);
+                var job = this.CrmOrganization.GetEntityByField("importjob", "importjobid", importJobId);
 
                 if (job == null)
                 {
-                    Logger.Log($"Job with id {importJobId} was not found", LogLevel.Info);
+                    Logger.Log($"Job with id {importJobId} was not found", LogLevel.Debug);
                     continue;
                 }
 
@@ -221,6 +290,11 @@ namespace SolutionManager.Logic.Messages
             }
         }
 
+        /// <summary>
+        /// Reads the solution import result from a given Job entity record.
+        /// </summary>
+        /// <param name="job">An ImportJob entity object.</param>
+        /// <returns>An <seealso cref="ImportSolutionResult"/> object.</returns>
         private ImportSolutionResult CreateImportStatus(Entity job)
         {
             using (var reader = new StringReader(job["data"] as string))

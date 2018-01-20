@@ -9,12 +9,27 @@ namespace SolutionManager.Logic.Messages
 {
     public class ExportSolutionMessage : Message
     {
+        /// <summary>
+        /// Gets or sets the unique name of the Dynamics CRM solution.
+        /// </summary>
         public string UniqueName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the output file where the retrieved file stream should be written to.
+        /// </summary>
         public string OutputFile { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the Dynamics CRM solution should be exported as managed or not.
+        /// </summary>
         public bool ExportAsManaged { get; set; }
 
         public ExportSolutionMessage(CrmOrganization organization) : base(organization) { }
 
+        /// <summary>
+        /// Exports a Dynamics CRM solution from a Dynamics CRM organization.
+        /// </summary>
+        /// <returns>A <seealso cref="Result"/> object</returns>
         public override Result Execute()
         {
             if (this.UniqueName == null || this.OutputFile == null)
@@ -53,6 +68,7 @@ namespace SolutionManager.Logic.Messages
 
             byte[] exportXml = result.ExportSolutionFile;
 
+            // Overwrite the file if it already exists.
             if (File.Exists(this.OutputFile))
             {
                 try

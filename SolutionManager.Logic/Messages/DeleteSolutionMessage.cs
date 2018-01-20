@@ -6,10 +6,17 @@ namespace SolutionManager.Logic.Messages
 {
     public class DeleteSolutionMessage : Message
     {
+        /// <summary>
+        /// Gets or sets the unique name of the Dynamics CRM solution.
+        /// </summary>
         public string UniqueName { get; set; }
 
         public DeleteSolutionMessage(CrmOrganization organization) : base(organization) { }
 
+        /// <summary>
+        /// Deletes a solution from a Dynamics CRM organization.
+        /// </summary>
+        /// <returns>A result containing a Success boolean.</returns>
         public override Result Execute()
         {
             var message = new RetrieveSolutionDataMessage(this.CrmOrganization)
