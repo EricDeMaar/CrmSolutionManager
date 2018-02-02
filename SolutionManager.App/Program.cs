@@ -11,6 +11,7 @@ using SolutionManager.App.Configuration;
 using SolutionManager.App.Configuration.WorkItems;
 using SolutionManager.Logic.Messages;
 using SolutionManager.Logic.Logging;
+using System.Collections.Generic;
 
 namespace SolutionManager.App
 {
@@ -95,6 +96,12 @@ namespace SolutionManager.App
                 return;
             }
 
+            if (workItem is EnableEntityChangeTrackingWorkItem)
+            {
+                ExecuteEntityChangeTracking(crm, (EnableEntityChangeTrackingWorkItem)workItem);
+                return;
+            }
+
             Logger.Log($"WorkItem type {workItem.GetType()} is not supported.", LogLevel.Warning, new InvalidOperationException($"WorkItem type {workItem.GetType()} is not supported."));
         }
 
@@ -148,6 +155,25 @@ namespace SolutionManager.App
                 };
 
                 crm.Execute(message);
+            }
+        }
+
+        public static void ExecuteEntityChangeTracking(IOrganizationService orgService, EnableEntityChangeTrackingWorkItem workItem)
+        {
+            using (var crm = new CrmOrganization(orgService))
+            {
+                List<string> entities = workItem.EntityLogicalNames.Split(',').ToList();
+
+                foreach (var entity in entities)
+                {
+                    var message = new EnableEntityChangeTrackingMessage(crm)
+                    {
+                        EntityLogicalName = entity,
+                        EnableChangeTracking = workItem.EnableChangeTracking,
+                    };
+
+                    crm.Execute(message);
+                }
             }
         }
     }

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SolutionManager.App", "Solu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SolutionManager.Logic", "SolutionManager.Logic\SolutionManager.Logic.csproj", "{EF44A6E1-4F27-42E2-8E4E-162CB8E7EC55}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SolutionManager.Cmdlets", "SolutionManager.Cmdlets\SolutionManager.Cmdlets.csproj", "{F35BB1DB-16FD-4F19-855E-C240B37ABF21}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{EF44A6E1-4F27-42E2-8E4E-162CB8E7EC55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF44A6E1-4F27-42E2-8E4E-162CB8E7EC55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF44A6E1-4F27-42E2-8E4E-162CB8E7EC55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F35BB1DB-16FD-4F19-855E-C240B37ABF21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F35BB1DB-16FD-4F19-855E-C240B37ABF21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F35BB1DB-16FD-4F19-855E-C240B37ABF21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F35BB1DB-16FD-4F19-855E-C240B37ABF21}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

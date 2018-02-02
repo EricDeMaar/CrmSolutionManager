@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using log4net;
 using log4net.Core;
 using log4net.Appender;
@@ -40,7 +36,7 @@ namespace SolutionManager.Logic.Logging
         static Logger()
         {
             LogInstance = LogManager.GetLogger("SolutionManager");
-
+           
             // Set up a ConsoleAppender if no reporting has been configured for Error messages.
             if (!LogInstance.Logger.IsEnabledFor(Level.Error))
             {
@@ -105,7 +101,7 @@ namespace SolutionManager.Logic.Logging
                         || LOG_LEVEL == LogLevel.Warning
                         || LOG_LEVEL == LogLevel.Error
                         || LOG_LEVEL == LogLevel.Fatal)
-                        LogInstance.Error(message, exception);
+                        LogInstance.Fatal(message, exception);
                     break;
                 default:
                     break;

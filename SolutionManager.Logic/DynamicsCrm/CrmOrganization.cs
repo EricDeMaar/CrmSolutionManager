@@ -29,6 +29,10 @@ namespace SolutionManager.Logic.DynamicsCrm
             return message.Execute();
         }
 
+        /// <summary>
+        /// Executes an OrganizationRequest to the Dynamics CRM OrganizationService.
+        /// </summary>
+        /// <param name="request">The OrganizationRequest to execute.</param>
         [DebuggerStepThrough]
         public void Execute(OrganizationRequest request)
         {
@@ -74,12 +78,12 @@ namespace SolutionManager.Logic.DynamicsCrm
         /// <summary>
         /// Executes a FetchXml to the OrganizationService.
         /// </summary>
-        /// <param name="fetchxml">The FetchXml query to be executed.</param>
+        /// <param name="fetchXml">The FetchXml query to be executed.</param>
         /// <returns>A collection of entities.</returns>
         [DebuggerStepThrough]
-        public IEnumerable<Entity> RetrieveFetchXml(string fetchxml)
+        public IEnumerable<Entity> RetrieveFetchXml(string fetchXml)
         {
-            var result = OrganizationService.RetrieveMultiple(new FetchExpression(fetchxml));
+            var result = OrganizationService.RetrieveMultiple(new FetchExpression(fetchXml));
             return result.Entities;
         }
 
@@ -119,12 +123,12 @@ namespace SolutionManager.Logic.DynamicsCrm
         /// <summary>
         /// A private method for fetching a single Entity record with a FetchXml query.
         /// </summary>
-        /// <param name="fetchxml">The FetchXml query to execute.</param>
+        /// <param name="fetchXml">The FetchXml query to execute.</param>
         /// <returns>A single entity record.</returns>
         [DebuggerStepThrough]
-        private Entity RetrieveFetchXmlSingle(string fetchxml)
+        private Entity RetrieveFetchXmlSingle(string fetchXml)
         {
-            var retrieved = RetrieveFetchXml(fetchxml).ToList();
+            var retrieved = RetrieveFetchXml(fetchXml).ToList();
 
             switch (retrieved.Count)
             {
@@ -133,7 +137,7 @@ namespace SolutionManager.Logic.DynamicsCrm
                 case 1:
                     return retrieved.First();
                 default:
-                    throw new Exception($"Expected one, retrieved multiple at: {fetchxml}");
+                    throw new Exception($"Expected one, retrieved multiple at: {fetchXml}");
             }
         }
 

@@ -28,8 +28,7 @@ namespace SolutionManager.App.Configuration
                 return false;
             }
 
-            Uri ignored;
-            return Uri.TryCreate(OrganizationUri, UriKind.Absolute, out ignored);
+            return Uri.TryCreate(OrganizationUri, UriKind.Absolute, out Uri ignored);
         }
     }
 }
