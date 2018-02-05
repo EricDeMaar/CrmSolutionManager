@@ -20,7 +20,7 @@ namespace SolutionManager.App.Helpers
             if (!string.IsNullOrEmpty(credentials.UserName) && !string.IsNullOrEmpty(credentials.Password))
                 connectionString += $"Username={credentials.UserName};Password={credentials.Password};";
 
-            connectionString += "authtype=Office365";
+            connectionString += "RequireNewInstance=True;authtype=Office365";
 
             CrmServiceClient conn = new CrmServiceClient(connectionString);
 
