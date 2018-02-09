@@ -22,6 +22,8 @@ namespace SolutionManager.Logic.Messages
 
         public override Result Execute()
         {
+            var doExecute = false;
+
             // Retrieve the entity metadata
             var retrieveEntityRequest = new RetrieveEntityRequest
             {
@@ -30,20 +32,36 @@ namespace SolutionManager.Logic.Messages
             };
 
             var retrieveEntityResponse = this.CrmOrganization.Execute<RetrieveEntityResponse>(retrieveEntityRequest);
+
             EntityMetadata entityMetadata = retrieveEntityResponse.EntityMetadata;
 
             // Update 'ChangeTrackingEnabled' property
-            entityMetadata.ChangeTrackingEnabled = this.EnableChangeTracking;
-
-            // Prepare the UpdateEntityRequest
-            var updateEntityRequest = new UpdateEntityRequest
+            if (entityMetadata.CanChangeTrackingBeEnabled.CanBeChanged)
             {
-                Entity = entityMetadata,
-            };
+                if (entityMetadata.ChangeTrackingEnabled == null || entityMetadata.ChangeTrackingEnabled != this.EnableChangeTracking)
+                {
+                    entityMetadata.ChangeTrackingEnabled = this.EnableChangeTracking;
+                    doExecute = true;
+                }
+            }
 
             // Fire & execute
-            Logger.Log($"Entity Change Tracking has been set to {this.EnableChangeTracking} for {this.EntityLogicalName}", LogLevel.Info);
-            this.CrmOrganization.Execute(updateEntityRequest);
+            if (doExecute)
+            {
+                // Prepare the UpdateEntityRequest
+                var updateEntityRequest = new UpdateEntityRequest
+                {
+                    Entity = entityMetadata,
+                };
+
+                Logger.Log($"Entity Change Tracking has been set to {this.EnableChangeTracking} for {this.EntityLogicalName}", LogLevel.Info);
+
+                this.CrmOrganization.Execute(updateEntityRequest);
+            }
+            else
+            {
+                Logger.Log($"Entity Change Tracking was already set to {this.EnableChangeTracking} for {this.EntityLogicalName}", LogLevel.Info);
+            }
 
             return new Result() { Success = true };
         }

@@ -4,11 +4,11 @@ namespace SolutionManager.Logic.Results
 {
     public class ImportSolutionResult : Result
     {
-        public Guid ImportJobId;
-        public ImportResultStatus Status;
-        public int ErrorCode;
-        public string ErrorMessage;
-        public string Data;
+        public Guid ImportJobId { get; set; }
+        public ImportResultStatus Status { get; set; }
+        public int ErrorCode { get; set; }
+        public string ErrorMessage { get; set; }
+        public string Data { get; set; }
     }
 
     public enum ImportResultStatus

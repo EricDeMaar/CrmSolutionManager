@@ -29,7 +29,7 @@ namespace SolutionManager.App.Configuration.WorkItems
 
         public override bool Validate()
         {
-            return true;
+            return !string.IsNullOrEmpty(FileName);
         }
     }
 }

@@ -57,6 +57,8 @@ namespace SolutionManager.Cmdlets.Base
                 }
             }
 
+            base.Write
+
             throw new Exception($"Could not connect to the Dynamics CRM organization. Exception: {ServiceClient?.LastCrmError}");
         }
 

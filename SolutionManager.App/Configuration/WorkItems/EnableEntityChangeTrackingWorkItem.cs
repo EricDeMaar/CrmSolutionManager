@@ -13,7 +13,7 @@ namespace SolutionManager.App.Configuration.WorkItems
 
         public override bool Validate()
         {
-            throw new NotImplementedException();
+            return !string.IsNullOrEmpty(EntityLogicalNames);
         }
     }
 }
