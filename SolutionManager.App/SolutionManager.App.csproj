@@ -89,7 +89,6 @@
     <Compile Include="Configuration\WorkItems\EnableEntityChangeTrackingWorkItem.cs" />
     <Compile Include="Configuration\WorkItems\ExportSolutionWorkItem.cs" />
     <Compile Include="Configuration\WorkItems\ImportSolutionWorkItem.cs" />
-    <Compile Include="Helpers\ActionExecutor.cs" />
     <Compile Include="Helpers\OrganizationHelper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

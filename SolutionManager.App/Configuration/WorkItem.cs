@@ -2,6 +2,7 @@
 using System.Runtime.Serialization;
 using System.Xml.Serialization;
 using SolutionManager.App.Configuration.WorkItems;
+using Microsoft.Xrm.Sdk;
 
 namespace SolutionManager.App.Configuration
 {
@@ -20,6 +21,8 @@ namespace SolutionManager.App.Configuration
 
         [XmlAttribute("organizationName")]
         public string OrganizationName { get; set; }
+
+        public abstract void Execute(IOrganizationService service);
 
         public abstract bool Validate();
     }

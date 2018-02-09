@@ -11,8 +11,7 @@ namespace SolutionManager.App
 {
     class Program
     {
-        private static readonly string _baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        private static readonly string _solutionsDirectory = Path.Combine(_baseDirectory, @"Solutions\");
+        private static readonly string _solutionsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Solutions\");
         private static readonly string _importConfig = Path.Combine(_solutionsDirectory, "ImportConfig.xml");
 
         private static void PrintAbortMessage() => Console.WriteLine("Aborting import process. ContinueOnError is false.");
@@ -27,32 +26,15 @@ namespace SolutionManager.App
                 try
                 {
                     config = new XmlSerializer(typeof(ImportConfiguration)).Deserialize(xml) as ImportConfiguration;
+                    config.Validate();
                 }
                 catch (Exception exception)
                 {
                     Logger.Log($"Error reading configuration '{_importConfig}'. Exception: {exception.Message}", LogLevel.Debug);
                 }
 
-                if (config == null)
-                {
-                    return;
-                }
-
-                config.Validate();
-
                 foreach (WorkItem workItem in config.WorkItems)
                 {
-                    bool validated = workItem.Validate();
-
-                    if (!validated && !workItem.ContinueOnError)
-                    {
-                        PrintAbortMessage();
-                        return;
-                    }
-
-                    if (!validated && workItem.ContinueOnError)
-                        continue;
-
                     Organization org = config.Organizations.Where(x => x.OrganizationName == workItem.OrganizationName).FirstOrDefault();
 
                     if (org == null)
@@ -66,10 +48,7 @@ namespace SolutionManager.App
 
                     var crm = OrganizationHelper.CreateOrganizationService(org);
 
-                    using (var actionExecutor = new ActionExecutor(crm))
-                    {
-                        actionExecutor.ExecuteAction(workItem);
-                    }
+                    workItem.Execute(crm);
                 }
             }
 
