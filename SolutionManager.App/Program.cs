@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using SolutionManager.App.Helpers;
@@ -14,9 +13,7 @@ namespace SolutionManager.App
         private static readonly string _solutionsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Solutions\");
         private static readonly string _importConfig = Path.Combine(_solutionsDirectory, "ImportConfig.xml");
 
-        private static void PrintAbortMessage() => Console.WriteLine("Aborting import process. ContinueOnError is false.");
-
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             Console.SetWindowSize(150, 25);
 
@@ -26,34 +23,18 @@ namespace SolutionManager.App
                 try
                 {
                     config = new XmlSerializer(typeof(ImportConfiguration)).Deserialize(xml) as ImportConfiguration;
-                    config.Validate();
                 }
                 catch (Exception exception)
                 {
                     Logger.Log($"Error reading configuration '{_importConfig}'. Exception: {exception.Message}", LogLevel.Debug);
+                    return -1;
                 }
 
-                foreach (WorkItem workItem in config.WorkItems)
-                {
-                    Organization org = config.Organizations.Where(x => x.OrganizationName == workItem.OrganizationName).FirstOrDefault();
-
-                    if (org == null)
-                    {
-                        Logger.Log($"Organization with name {workItem.OrganizationName} was not found in the config.", 
-                            LogLevel.Warning, 
-                            new NullReferenceException($"Organization with name {workItem.OrganizationName} was not found in the config."));
-
-                        return;
-                    }
-
-                    var crm = OrganizationHelper.CreateOrganizationService(org);
-
-                    workItem.Execute(crm);
-                }
+                var cli = new ArgumentRouter(args, config);
             }
 
-            Logger.Log("All solution files have been processed. Press any key to exit.", LogLevel.Info);
             Console.ReadKey();
+            return 0;
         }
     }
 }

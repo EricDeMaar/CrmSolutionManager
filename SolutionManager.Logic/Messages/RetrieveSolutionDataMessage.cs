@@ -31,9 +31,16 @@ namespace SolutionManager.Logic.Messages
                 EntityName = Solution.EntityLogicalName,
                 ColumnSet = new ColumnSet(new string[] { "installedon", "version", "versionnumber", "friendlyname", "uniquename", "description", "ismanaged" }),
                 Criteria = new FilterExpression()
+                {
+                    Conditions =
+                    {
+                        {
+                            new ConditionExpression("uniquename", ConditionOperator.Equal, this.UniqueName)
+                        }
+                    }
+                }
             };
 
-            querySolution.Criteria.AddCondition("uniquename", ConditionOperator.Equal, this.UniqueName);
             Solution solution = (Solution)this.CrmOrganization.RetrieveMultiple(querySolution).Entities[0];
 
             return new RetrieveSolutionDataResult()

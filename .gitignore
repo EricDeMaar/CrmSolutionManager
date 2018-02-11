@@ -139,3 +139,6 @@ ehthumbs.db
 
 # Mac crap
 .DS_Store
+
+# Launch settings
+launchSettings.json
