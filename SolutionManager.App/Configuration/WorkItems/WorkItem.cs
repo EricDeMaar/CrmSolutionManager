@@ -9,10 +9,12 @@ namespace SolutionManager.App.Configuration.WorkItems
     [KnownType(typeof(ExportSolutionWorkItem))]
     [KnownType(typeof(DeleteSolutionWorkItem))]
     [KnownType(typeof(EnableEntityChangeTrackingWorkItem))]
+    [KnownType(typeof(ChangeOwnerOfWorkflowsWorkItem))]
     [XmlInclude(typeof(ImportSolutionWorkItem))]
     [XmlInclude(typeof(ExportSolutionWorkItem))]
     [XmlInclude(typeof(DeleteSolutionWorkItem))]
     [XmlInclude(typeof(EnableEntityChangeTrackingWorkItem))]
+    [XmlInclude(typeof(ChangeOwnerOfWorkflowsWorkItem))]
     public abstract class WorkItem
     {
         [XmlAttribute("continueOnError")]

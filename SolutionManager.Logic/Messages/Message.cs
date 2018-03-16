@@ -1,4 +1,4 @@
-﻿using SolutionManager.Logic.DynamicsCrm;
+﻿    using SolutionManager.Logic.DynamicsCrm;
 using SolutionManager.Logic.Results;
 
 namespace SolutionManager.Logic.Messages

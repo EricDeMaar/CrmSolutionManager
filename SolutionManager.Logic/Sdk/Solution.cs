@@ -88,7 +88,7 @@ namespace SolutionManager.Logic.Sdk
                 return version;
             }
 
-            return null as Version;
+            return null;
         }
     }
 }

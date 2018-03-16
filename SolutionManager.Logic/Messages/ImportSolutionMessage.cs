@@ -135,7 +135,7 @@ namespace SolutionManager.Logic.Messages
                     Request = importSolutionRequest
                 };
 
-                ExecuteAsyncResponse asyncResponse = this.CrmOrganization.Execute<ExecuteAsyncResponse>(asyncRequest) as ExecuteAsyncResponse;
+                ExecuteAsyncResponse asyncResponse = this.CrmOrganization.Execute<ExecuteAsyncResponse>(asyncRequest);
                 this.AsyncJobId = asyncResponse.AsyncJobId;
 
                 DateTime end = DateTime.Now.AddSeconds(10);
@@ -176,11 +176,8 @@ namespace SolutionManager.Logic.Messages
             ImportSolutionProgress(this.ImportJobId);
 
             job = this.CrmOrganization.GetEntityByField("importjob", "importjobid", this.ImportJobId);
-
             ImportSolutionResult status = CreateImportStatus(job);
-
             Logger.Log($"Solution {this.FileName} was imported with status {status.Status.ToString()}", LogLevel.Info);
-
             return status;
         }
 
@@ -248,8 +245,7 @@ namespace SolutionManager.Logic.Messages
                 Logger.Log($"Found solution {result.Solution.UniqueName} in target system - a higher version ({result.Solution.Version}) is already loaded.", LogLevel.Info);
                 return false;
             }
-
-            if (version > result.Solution.GetVersion())
+            else if (version > result.Solution.GetVersion())
             {
                 Logger.Log($"Found solution {result.Solution.UniqueName} with lower version {result.Solution.Version} in target system - starting update.", LogLevel.Info);
                 return true;
@@ -268,7 +264,7 @@ namespace SolutionManager.Logic.Messages
             {
                 // Make sure that the request is fired after the ImportSolutionRequest has been executed
                 Thread.Sleep(5000);
-
+                    
                 var job = this.CrmOrganization.GetEntityByField("importjob", "importjobid", importJobId);
 
                 if (job == null)

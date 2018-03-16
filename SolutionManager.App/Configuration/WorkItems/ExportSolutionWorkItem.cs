@@ -1,10 +1,10 @@
-﻿using Microsoft.Xrm.Sdk;
+﻿using System;
+using System.IO;
+using System.Xml.Serialization;
+using Microsoft.Xrm.Sdk;
 using SolutionManager.Logic.DynamicsCrm;
 using SolutionManager.Logic.Logging;
 using SolutionManager.Logic.Messages;
-using System;
-using System.IO;
-using System.Xml.Serialization;
 
 namespace SolutionManager.App.Configuration.WorkItems
 {
