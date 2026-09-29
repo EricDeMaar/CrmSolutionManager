@@ -1,5 +1,4 @@
-﻿// Epic repository publishing verification, 2026-09-29.
-using System;
+﻿using System;
 using System.IO;
 using System.Xml.Linq;
 using System.Xml.Serialization;
